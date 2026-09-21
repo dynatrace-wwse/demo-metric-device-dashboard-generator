@@ -52,10 +52,19 @@ You are a Dynatrace Solutions Engineer. For a given technology:
 
 Every generated technology folder must include an `asset-manifest.json` with
 `managedBy: dynatrace-metric-entity-dashboard-generator`, the event provider,
-log source, dashboard IDs, OpenPipeline setting IDs, this technology's
-dedicated workflow ID and task names, logo document IDs, and entity
-type/prefix. Use this manifest as the primary cleanup record; do not infer
-ownership from a dashboard title alone.
+log source, dashboard IDs, this technology's *owned* OpenPipeline pipeline
+setting ID, its routing entry's `description` (see below — never store or
+treat the shared routing object's ID as owned by one technology), this
+technology's dedicated workflow ID and task names, logo document IDs, and
+entity type/prefix. Use this manifest as the primary cleanup record; do not
+infer ownership from a dashboard title alone.
+
+The OpenPipeline pipeline setting is owned exclusively by this technology and
+is safe to delete outright. The OpenPipeline **routing** entry is not — it is
+one row inside a tenant-wide singleton object shared by every technology and
+every hand-built demo route (see Phase 4's CRITICAL note). Track it in the
+manifest under `resources.routingEntries` (by `description`, not object ID),
+and clean it up by removing just that entry, never the shared object.
 
 Validate it with `scripts/validate-asset-manifest.sh` before deployment. A
 generated pack is not cleanup-ready until the manifest passes validation.
@@ -63,9 +72,10 @@ Run `scripts/test-asset-manifest.sh` when changing the manifest schema or
 cleanup behavior.
 
 The cleanup operation must default to discovery or dry-run. It must display
-the active tenant, require typed technology confirmation before deletion, and
-delete that technology's dedicated workflow entirely — it is never shared with
-another technology, so there is nothing else to preserve inside it. Historical
+the active tenant, require typed technology confirmation before deletion,
+delete that technology's dedicated workflow and pipeline setting entirely
+(neither is shared), and remove only this technology's entry from the shared
+OpenPipeline routing object — never delete that object itself. Historical
 BizEvents and logs are retained; Smartscape entities may require
 tenant-supported lifecycle handling and must not be reported as deleted
 without verification.
@@ -349,7 +359,7 @@ dashboards/<Technology>/
   <Technology>-injector.js               # 30-min BizEvents metrics/logs injector
   <Technology>-entity-creator.js         # Workflow task: MINT ingest to associate metrics with entities
   <Technology>-openpipeline.json         # OpenPipeline pipeline settings (smartscapeNode extraction)
-  <Technology>-openpipeline-routing.json # OpenPipeline routing rule (routes events to topology pipeline)
+  <Technology>-openpipeline-routing-entry.json # ONE routing entry — never applied directly, only via scripts/apply-openpipeline-routing.sh (see CRITICAL note in "Create Dynatrace entities")
   README.md                              # overview, dashboard ID, workflow ID, entity IDs
   LEARNINGS.md                           # DQL patterns, pitfalls, entity creation findings
   SALES-PITCH.md                         # 1-page value pitch for sales teams
@@ -368,7 +378,8 @@ mirror the version (e.g. `acme_v1`, `acme_v2`).
 - `reference/zscaler-internet-access/zscaler-internet-access-injector.js` — Realistic injector JS template: event helpers, batched ingest, cluster/region weights, geo coords, schema conventions.
 - `reference/zscaler-internet-access/zscaler-internet-access-log-injector.js` — Log injector JS template, when the technology warrants one.
 - `reference/zscaler-internet-access/zscaler-internet-access-entity-creator.js` — Workflow task JS that MINT-ingests entities from BizEvents.
-- `reference/zscaler-internet-access/zscaler-internet-access-openpipeline.yaml` and `-openpipeline-routing.yaml` — OpenPipeline settings and routing rule for Smartscape entity extraction.
+- `reference/zscaler-internet-access/zscaler-internet-access-openpipeline.yaml` — OpenPipeline pipeline settings for Smartscape entity extraction (safe to `dtctl apply -f` directly — this schema is multi-object).
+- `reference/zscaler-internet-access/zscaler-internet-access-openpipeline-routing-entry.json` — the single routing entry shape expected by `scripts/apply-openpipeline-routing.sh`. This is a *fragment*, not a full settings document — never `dtctl apply -f` it directly (see CRITICAL note in "Create Dynatrace entities").
 
 The agent must **mirror the structure** of these examples.
 
@@ -694,10 +705,30 @@ only reliable path to create topology entities from BizEvents is
 
 1. Create a `builtin:openpipeline.bizevents.pipelines` settings object with
    one or more `smartscapeNodeExtraction.processors` of `type: "smartscapeNode"`.
-2. Create a `builtin:openpipeline.bizevents.routing` settings object to route
-   the technology's events (matched by `event.provider`) to that pipeline.
-3. Apply both with `dtctl apply -f`.
-4. As BizEvents arrive the pipeline extracts Smartscape nodes automatically.
+   This schema is **multi-object** (`multiObject: true`, `maxObjects: 100`) —
+   each technology safely gets its own pipeline object. Apply it directly:
+   `dtctl apply -f "dashboards/<technology>/<technology>-openpipeline.json" --plain`.
+2. Add a routing entry so the technology's events (matched by
+   `event.provider`) reach that pipeline.
+
+   > **CRITICAL — `builtin:openpipeline.bizevents.routing` is a SINGLETON
+   > schema** (`maxObjects: 1`, `multiObject: false`): there is exactly **one**
+   > such object per environment, holding a `routingEntries` list shared by
+   > every technology this generator has ever deployed *and* every
+   > hand-built demo route already in the tenant. Applying a fresh
+   > single-entry document with no `id` resolves to that same object and
+   > **replaces its entire list** — silently deleting every other rule that
+   > was there. This has already broken a real demo. **Never** run
+   > `dtctl apply -f` on an openpipeline-routing file directly. Always use:
+   > ```bash
+   > scripts/apply-openpipeline-routing.sh "dashboards/<technology>/<technology>-openpipeline-routing-entry.json"
+   > ```
+   > It fetches the existing object, merges the entry in by `description`
+   > (adds it, or updates it in place if the description already exists —
+   > the schema enforces uniqueness on that field), and re-applies the full
+   > merged list so every other technology's and every hand-built entry
+   > survives untouched.
+3. As BizEvents arrive the pipeline extracts Smartscape nodes automatically.
    Entity IDs are written back to the processed event.
 
 ### `smartscapeNode` processor key fields
@@ -729,8 +760,9 @@ only reliable path to create topology entities from BizEvents is
 **Critical constraints:**
 - `nodeType` must be uppercase `[A-Z][A-Z0-9_]+`. `CUSTOM_DEVICE` is **explicitly blocked** — use any other `CUSTOM_*` type (e.g. `CUSTOM_GPU_CLUSTER`, `CUSTOM_DB_INSTANCE`).
 - `requiredDimensions.valuePattern` in routing must use `$eq(value)` or `$prefix(value)` syntax — raw strings cause HTTP 400.
-- **OpenPipeline routing `pipelineId`** must be the long base64-encoded settings object ID returned by `dtctl apply`, NOT the human-readable `customId` string. After applying the pipeline settings file, read back the object ID with `dtctl describe settings <id>` and use that value in the routing file.
+- **OpenPipeline routing `pipelineId`** must be the long base64-encoded settings object ID returned by `dtctl apply`, NOT the human-readable `customId` string. After applying the pipeline settings file, read back the object ID with `dtctl describe settings <id>` and use that value in the routing entry file.
 - Entities appear in **Explorer Classic** (Infrastructure & Operations app → Smartscape). They do NOT appear in Explorer New without an Extension Framework 2.0 (EF2) extension.
+- **OpenPipeline cleanup order matters:** always remove this technology's routing *entry* (via `scripts/apply-openpipeline-routing.sh`'s companion removal in `cleanup-technology.sh` — never delete the shared routing object itself) **before** deleting its pipeline settings object. The API enforces a referential constraint — deleting a pipeline while any routing entry still points to it returns HTTP 400 "Constraints violated".
 
 ### Entity type guidance
 
@@ -885,9 +917,12 @@ another's.
 2. **Apply OpenPipeline entity settings:**
    ```bash
    dtctl apply -f "dashboards/<technology>/<technology>-openpipeline.json" --plain
-   dtctl apply -f "dashboards/<technology>/<technology>-openpipeline-routing.json" --plain
+   scripts/apply-openpipeline-routing.sh "dashboards/<technology>/<technology>-openpipeline-routing-entry.json"
    ```
-   These create the `smartscapeNode` pipeline that extracts Smartscape entities from BizEvents.
+   The first creates the `smartscapeNode` pipeline that extracts Smartscape
+   entities from BizEvents. The second **must** go through the merge script,
+   never a plain `dtctl apply -f` — see the CRITICAL note in "Create
+   Dynatrace entities".
 
 3. **Check whether this technology already has its own workflow (only relevant
    when updating an existing pack, not on a first run):**
@@ -1014,7 +1049,8 @@ For every project, write into the company folder:
 - [ ] 3,000+ events ingested per run.
 - [ ] OpenPipeline settings applied; entities visible in Explorer Classic.
 - [ ] `README.md`, `LEARNINGS.md`, `SALES-PITCH.md` all present.
-- [ ] `<technology>-openpipeline.json` and `<technology>-openpipeline-routing.json` present.
+- [ ] `<technology>-openpipeline.json` and `<technology>-openpipeline-routing-entry.json` present.
+- [ ] Routing entry was applied via `scripts/apply-openpipeline-routing.sh`, never a direct `dtctl apply -f` — confirm every pre-existing entry in `builtin:openpipeline.bizevents.routing` is still present after deployment.
 
 ---
 

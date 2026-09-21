@@ -14,7 +14,7 @@ fields, entity type, thresholds, and Zscaler terminology as domain-specific.
 - zscaler-internet-access-log-injector.js
 - zscaler-internet-access-entity-creator.js
 - zscaler-internet-access-openpipeline.yaml
-- zscaler-internet-access-openpipeline-routing.yaml
+- zscaler-internet-access-openpipeline-routing-entry.json
 - zscaler-internet-access-workflow.yaml
 - upload-logo.sh
 - LEARNINGS.md
@@ -52,3 +52,13 @@ The log ingest endpoint accepts a JSON array body, not an NDJSON string. The
 dashboard threshold validator checks the live persisted dashboard payload,
 because a successful `dtctl apply` does not guarantee that nested visualization
 settings were retained by the tenant.
+
+`builtin:openpipeline.bizevents.routing` is a tenant-wide singleton schema
+(`maxObjects: 1`) — there is exactly one such object per environment, shared
+by every technology and every hand-built demo route. That's why
+`zscaler-internet-access-openpipeline-routing-entry.json` here is a single
+routing-entry *fragment*, not a full settings document: it must always be
+merged into the existing object via `scripts/apply-openpipeline-routing.sh`,
+never applied directly with `dtctl apply -f`. Applying a fresh single-entry
+document overwrites the whole list and silently deletes every other rule
+that was already there — this broke a real customer demo in production.

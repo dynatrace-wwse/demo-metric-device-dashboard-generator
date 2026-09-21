@@ -1,9 +1,0 @@
-schemaid: builtin:openpipeline.bizevents.routing
-scope: environment
-value:
-  routingEntries:
-    - description: Zscaler ZIA topology extraction pipeline
-      enabled: true
-      matcher: event.provider == "zscaler.zia.event.provider"
-      pipelineType: custom
-      pipelineId: vu9U3hXa3q0AAAABAChidWlsdGluOm9wZW5waXBlbGluZS5iaXpldmVudHMucGlwZWxpbmVzAAZ0ZW5hbnQABnRlbmFudAAkNDI2Y2NhZjctMTAxNS0zZjljLWIwMDUtMTM0ZmQ2NzBiNTUyvu9U3hXa3q0

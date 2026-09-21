@@ -19,7 +19,8 @@ cat > "$VALID" <<'JSON'
   "resources": {
     "dashboard": [{ "type": "dashboard", "id": "dashboard-1" }],
     "settings": [{ "type": "setting", "id": "setting-1" }],
-    "documents": []
+    "documents": [],
+    "routingEntries": [{ "description": "Example Runtime topology extraction pipeline" }]
   },
   "entity": { "nodeType": "CUSTOM_RUNTIME_NODE", "idPrefix": "runtime" }
 }

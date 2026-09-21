@@ -106,7 +106,8 @@ echo
 echo "Configuration candidates:"
 jq -r '
   (.resources.dashboard[]? | "- dashboard \(.id) \(.name // "")"),
-  (.resources.settings[]? | "- setting \(.id) [\(.role // "")]") ,
+  (.resources.settings[]? | "- setting \(.id) [\(.role // "")] (owned exclusively by this technology)") ,
+  (.resources.routingEntries[]? | "- routing entry \"\(.description)\" (removed from the shared tenant-wide routing object; the object itself is never deleted)"),
   (.resources.documents[]? | "- document \(.id) [\(.role // "")] (manual/platform-supported cleanup)"),
   (.workflow.tasks[]? | "- workflow task \(. )")
 ' "$MANIFEST"
@@ -144,18 +145,49 @@ if [ -n "$WORKFLOW_ID" ]; then
   delete_resource "workflow" "$WORKFLOW_ID"
 fi
 
+# Routing entries live inside a tenant-wide SINGLETON settings object
+# (builtin:openpipeline.bizevents.routing, maxObjects=1) shared by every
+# technology and every hand-built demo route. Remove only this technology's
+# entries from that object's list; never delete the object itself. This must
+# happen before the pipeline settings object below is deleted, or the API
+# rejects the pipeline delete with a referential-constraint 400.
+ROUTING_DESCRIPTIONS=()
+while IFS= read -r d; do
+  [ -n "$d" ] && ROUTING_DESCRIPTIONS+=("$d")
+done < <(jq -r '.resources.routingEntries[]?.description' "$MANIFEST")
+
+if [ "${#ROUTING_DESCRIPTIONS[@]}" -gt 0 ]; then
+  ROUTING_SCHEMA="builtin:openpipeline.bizevents.routing"
+  routing_tmp="$(mktemp)"
+  trap 'rm -f "$routing_tmp"' EXIT
+  dtctl get settings --schema "$ROUTING_SCHEMA" -o json --plain > "$routing_tmp"
+  ROUTING_OBJECT_ID="$(jq -r '.result[0].objectId // empty' "$routing_tmp")"
+  if [ -n "$ROUTING_OBJECT_ID" ]; then
+    echo "Removing ${#ROUTING_DESCRIPTIONS[@]} routing entr$([ "${#ROUTING_DESCRIPTIONS[@]}" = 1 ] && echo y || echo ies) from the shared routing object $ROUTING_OBJECT_ID (every other entry is preserved)..."
+    jq --argjson names "$(printf '%s\n' "${ROUTING_DESCRIPTIONS[@]}" | jq -R . | jq -s .)" '
+      .result[0] as $existing
+      | {
+          id: $existing.objectId,
+          schemaid: $existing.schemaId,
+          scope: $existing.scope,
+          value: { routingEntries: [ $existing.value.routingEntries[]? | select(.description | IN($names[]) | not) ] }
+        }
+    ' "$routing_tmp" > "${routing_tmp}.resource"
+    dtctl apply -f "${routing_tmp}.resource" -o json --plain
+    rm -f "${routing_tmp}.resource"
+  else
+    echo "No shared routing object exists — nothing to remove for: ${ROUTING_DESCRIPTIONS[*]}"
+  fi
+fi
+
 while IFS=$'\t' read -r resource_type resource_id; do
   [ -n "$resource_type" ] || continue
   echo "Deleting $resource_type $resource_id..."
   delete_resource "$resource_type" "$resource_id"
 done < <(jq -r '
-  [
-    (.resources.dashboard[]? | {type: .type, id: .id, order: 0}),
-    (.resources.settings[]?  | {type: .type, id: .id,
-       order: (if .type | test("routing")  then 1
-               elif .type | test("pipeline") then 2
-               else 1 end)})
-  ] | sort_by(.order) | .[] | [.type, .id] | @tsv
+  (.resources.dashboard[]? | [.type, .id]),
+  (.resources.settings[]?  | [.type, .id])
+  | @tsv
 ' "$MANIFEST")
 
 jq -r '.resources.documents[]? | "Document retained for manual/platform-supported cleanup: \(.id)"' "$MANIFEST"
@@ -176,6 +208,17 @@ done < <(jq -r '
   (if (.workflow.id // empty) != "" then [ "workflow", .workflow.id ] else empty end)
   | @tsv
 ' "$MANIFEST")
+
+if [ "${#ROUTING_DESCRIPTIONS[@]}" -gt 0 ]; then
+  remaining="$(dtctl get settings --schema "builtin:openpipeline.bizevents.routing" -o json --plain 2>/dev/null \
+    | jq -r --argjson names "$(printf '%s\n' "${ROUTING_DESCRIPTIONS[@]}" | jq -R . | jq -s .)" \
+      '[.result[0].value.routingEntries[]? | select(.description | IN($names[]))] | length')"
+  if [ "${remaining:-0}" = "0" ]; then
+    echo "Verified absent: routing entries ${ROUTING_DESCRIPTIONS[*]}"
+  else
+    echo "WARNING: $remaining routing entry/entries for '$TECHNOLOGY' still present in the shared routing object" >&2
+  fi
+fi
 
 echo
 echo "Cleanup complete for configuration assets belonging to $TECHNOLOGY."

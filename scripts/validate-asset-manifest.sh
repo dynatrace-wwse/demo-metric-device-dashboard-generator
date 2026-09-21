@@ -25,10 +25,13 @@ jq -e '
   ((.resources.dashboard | type) == "array") and
   ((.resources.settings | type) == "array") and
   ((.resources.documents | type) == "array") and
+  ((.resources.routingEntries | type) == "array") and
   (.entity.nodeType | strings | test("^[A-Z][A-Z0-9_]+$")) and
   (.entity.idPrefix | strings | length > 0) and
   ([(.resources.dashboard // [])[], (.resources.settings // [])[], (.resources.documents // [])[]]
     | all(.[]; ((.type | strings | length > 0) and (.id | strings | length > 0)))) and
+  ((.resources.routingEntries // [])
+    | all(.[]; (.description | strings | length > 0))) and
   ([.workflow.tasks[]] | length == (unique | length))
 ' "$MANIFEST" >/dev/null
 
