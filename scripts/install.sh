@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-shot installer for Metric-Entity Dashboard Generator agent prerequisites.
+# One-shot installer for Metric-Device Dashboard Generator agent prerequisites.
 # macOS / Linux only. Windows users: see README.md.
 set -eu
 
@@ -89,16 +89,16 @@ else
   yellow "==> Installing dynatrace-for-ai agent skills..."
   npx --yes skills add dynatrace/dynatrace-for-ai || yellow "  (skip if already present)"
 
-  yellow "==> Installing dynatrace-metric-entity-dashboard-generator skill..."
-  npx --yes skills add Dynatrace-BrianWilson/dynatrace-metric-entity-dashboard-generator || yellow "  (skip if already present)"
+  yellow "==> Installing dynatrace-metric-device-dashboard-generator skill..."
+  npx --yes skills add dynatrace-wwse/demo-metric-device-dashboard-generator || yellow "  (skip if already present)"
 fi
 
 # ---------- Claude Code plugin (skill + /generate-kpi-dashboard slash command) ----------
 if have claude; then
   yellow "==> Claude Code detected — installing plugin (skill + slash command)..."
-  claude plugin marketplace add Dynatrace-BrianWilson/dynatrace-metric-entity-dashboard-generator 2>/dev/null \
+  claude plugin marketplace add dynatrace-wwse/demo-metric-device-dashboard-generator 2>/dev/null \
     || yellow "  (marketplace already added)"
-  claude plugin install dynatrace-metric-entity-dashboard-generator@dynatrace-metric-entity-dashboard-generator 2>/dev/null \
+  claude plugin install dynatrace-metric-device-dashboard-generator@dynatrace-metric-device-dashboard-generator 2>/dev/null \
     || yellow "  (plugin already installed)"
   green "  /generate-metric-dashboard is now available in Claude Code from any cwd."
 else

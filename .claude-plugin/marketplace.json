@@ -1,14 +1,14 @@
 {
-  "name": "dynatrace-metric-entity-dashboard-generator",
+  "name": "dynatrace-metric-device-dashboard-generator",
   "owner": {
-    "name": "Dynatrace-BrianWilson",
-    "url": "https://github.com/Dynatrace-BrianWilson"
+    "name": "dynatrace-wwse",
+    "url": "https://github.com/dynatrace-wwse"
   },
   "plugins": [
     {
-      "name": "dynatrace-metric-entity-dashboard-generator",
+      "name": "dynatrace-metric-device-dashboard-generator",
       "description": "A Dynatrace Gen 3 metric dashboard generator with /generate-metric-dashboard and /cleanup-metric-dashboard commands.",
-      "source": "./plugins/dynatrace-metric-entity-dashboard-generator"
+      "source": "./plugins/dynatrace-metric-device-dashboard-generator"
     }
   ]
 }

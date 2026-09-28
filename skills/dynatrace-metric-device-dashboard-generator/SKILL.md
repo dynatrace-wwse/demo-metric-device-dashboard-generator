@@ -1,6 +1,6 @@
 ---
-name: dynatrace-metric-entity-dashboard-generator
-description: Generate a Dynatrace Gen 3 **KPI dashboard** (15–20 KPIs, optional map tile, branded section dividers), a relevant dynatrace entity to map metrics and logs to and a matching 30‑minute data injector for a named technology, then deploy both via `dtctl`. Do not use this skill if a user is triggering the generate-kpi-dashboard generator. Triggers include phrases like "generate a metric dashboard", "build a metrics demo for <technology>", "spin up a metrics dashboard + injector", "/generate-technology-dashboard". Requires `dtctl` authenticated to a Dynatrace Gen 3 tenant.
+name: dynatrace-metric-device-dashboard-generator
+description: Generate a Dynatrace Gen 3 **KPI dashboard** (15–20 KPIs, optional map tile, branded section dividers), a relevant dynatrace device to map metrics and logs to and a matching 30‑minute data injector for a named technology, then deploy both via `dtctl`. Do not use this skill if a user is triggering the generate-kpi-dashboard generator. Triggers include phrases like "generate a metric dashboard", "build a metrics demo for <technology>", "spin up a metrics dashboard + injector", "/generate-technology-dashboard". Requires `dtctl` authenticated to a Dynatrace Gen 3 tenant.
 ---
 
 # Metrics & Log Event Generator Agent
@@ -8,7 +8,7 @@ description: Generate a Dynatrace Gen 3 **KPI dashboard** (15–20 KPIs, optiona
 Canonical instructions for any agent (Claude Code, GitHub Copilot, Cursor,
 etc.) running in this repository. The agent's job: for any technology the user
 names, generate a Dynatrace **Gen 3 KPI dashboard** and a **30‑minute
-metric and log (if logs are applicable) injector**, and create a dynatrace entity the metrics and logs are associated with, deploy them with `dtctl`, and verify ingestion.
+metric and log (if logs are applicable) injector**, and create a dynatrace device the metrics and logs are associated with, deploy them with `dtctl`, and verify ingestion.
 
 ---
 
@@ -39,7 +39,7 @@ You are a Dynatrace Solutions Engineer. For a given technology:
 1. Research technology KPIs relevant to the technology provided (15–20).
 2. Include a search of the dynatrace hub - https://www.dynatrace.com/hub/ - for any pre-configured extensions, technology, or application information.
 3. Build a **Gen 3 dashboard** with real‑time KPI tiles, charts, and if applicable, a map tile. The metrics used should be the most relevant for the technology, based on research.
-4. Create a Dynatrace entity to map metrics and logs to.
+4. Create a Dynatrace device to map metrics and logs to.
 5. Create a JavaScript injector that streams 3,000–5,000 metric events per
    30‑minute run, and if applicable, 2000 log entries per run.
 6. Deploy both to Dynatrace via `dtctl`, creating **a dedicated workflow for
@@ -51,12 +51,12 @@ You are a Dynatrace Solutions Engineer. For a given technology:
 ### Asset ownership and cleanup
 
 Every generated technology folder must include an `asset-manifest.json` with
-`managedBy: dynatrace-metric-entity-dashboard-generator`, the event provider,
+`managedBy: dynatrace-metric-device-dashboard-generator`, the event provider,
 log source, dashboard IDs, this technology's *owned* OpenPipeline pipeline
 setting ID, its routing entry's `description` (see below — never store or
 treat the shared routing object's ID as owned by one technology), this
 technology's dedicated workflow ID and task names, logo document IDs, and
-entity type/prefix. Use this manifest as the primary cleanup record; do not
+device type/prefix. Use this manifest as the primary cleanup record; do not
 infer ownership from a dashboard title alone.
 
 The OpenPipeline pipeline setting is owned exclusively by this technology and
@@ -110,21 +110,21 @@ an unlimited workflow.
 
 ## Reference implementation: Zscaler Internet Access
 
-Use `skills/dynatrace-metric-entity-dashboard-generator/reference/zscaler-internet-access/` as the primary working example for
+Use `skills/dynatrace-metric-device-dashboard-generator/reference/zscaler-internet-access/` as the primary working example for
 the complete asset lifecycle. It demonstrates a Gen 3 dashboard, BizEvents
 injector, optional synthetic logs, OpenPipeline Smartscape extraction, a
 dedicated multi-task workflow, threshold persistence validation, and live
 ingestion checks.
 
 Treat Zscaler's fields and event names as technology-specific. Reuse its
-structure and validation approach, but redesign the event schema, entity type,
+structure and validation approach, but redesign the event schema, device type,
 KPIs, logs, and layout for the requested technology.
 
 ### Technology archetypes
 
 Classify the requested technology before choosing the asset model:
 
-| Archetype | Typical entity | Useful signals | Map guidance |
+| Archetype | Typical device | Useful signals | Map guidance |
 |---|---|---|---|
 | Network/device | device, interface, site | availability, errors, throughput, capacity, state | Use for sites or geographic device fleets |
 | Runtime platform | cluster, node, process group | CPU, memory, latency, restarts, queue depth, saturation | Use only when nodes or regions matter |
@@ -134,7 +134,7 @@ Classify the requested technology before choosing the asset model:
 | Security/control plane | policy engine, gateway, tenant, site | detections, blocks, risk, policy outcomes, audit activity | Use for sites, regions, or trust boundaries |
 
 The archetype is a design aid, not a restriction. If the technology spans
-multiple archetypes, state which entity is primary and which signals are
+multiple archetypes, state which device is primary and which signals are
 supporting evidence.
 
 ---
@@ -164,7 +164,7 @@ Before the agent runs **any** `dtctl apply`, `dtctl exec`, `dtctl create`,
 `dtctl edit`, or `dtctl delete` command (anything that mutates the tenant or
 executes a workflow), it MUST:
 
-1. Show the active context and identity to the user, e.g.:
+1. Show the active context and iddevice to the user, e.g.:
    ```bash
    dtctl ctx current
    dtctl auth whoami
@@ -357,11 +357,11 @@ dashboards/<Technology>/
   asset-manifest.json                    # generator ownership and tenant resource IDs
   <Technology>-dashboard-v1.json          # Gen 3 dashboard JSON
   <Technology>-injector.js               # 30-min BizEvents metrics/logs injector
-  <Technology>-entity-creator.js         # Workflow task: MINT ingest to associate metrics with entities
+  <Technology>-device-creator.js         # Workflow task: MINT ingest to associate metrics with entities
   <Technology>-openpipeline.json         # OpenPipeline pipeline settings (smartscapeNode extraction)
   <Technology>-openpipeline-routing-entry.json # ONE routing entry — never applied directly, only via scripts/apply-openpipeline-routing.sh (see CRITICAL note in "Create Dynatrace entities")
-  README.md                              # overview, dashboard ID, workflow ID, entity IDs
-  LEARNINGS.md                           # DQL patterns, pitfalls, entity creation findings
+  README.md                              # overview, dashboard ID, workflow ID, device IDs
+  LEARNINGS.md                           # DQL patterns, pitfalls, device creation findings
   SALES-PITCH.md                         # 1-page value pitch for sales teams
 ```
 
@@ -377,8 +377,8 @@ mirror the version (e.g. `acme_v1`, `acme_v2`).
 - `reference/zscaler-internet-access/zscaler-internet-access-workflow.yaml` — Workflow + JS task shape (schedule, ownerType, action type, position).
 - `reference/zscaler-internet-access/zscaler-internet-access-injector.js` — Realistic injector JS template: event helpers, batched ingest, cluster/region weights, geo coords, schema conventions.
 - `reference/zscaler-internet-access/zscaler-internet-access-log-injector.js` — Log injector JS template, when the technology warrants one.
-- `reference/zscaler-internet-access/zscaler-internet-access-entity-creator.js` — Workflow task JS that MINT-ingests entities from BizEvents.
-- `reference/zscaler-internet-access/zscaler-internet-access-openpipeline.yaml` — OpenPipeline pipeline settings for Smartscape entity extraction (safe to `dtctl apply -f` directly — this schema is multi-object).
+- `reference/zscaler-internet-access/zscaler-internet-access-device-creator.js` — Workflow task JS that MINT-ingests entities from BizEvents.
+- `reference/zscaler-internet-access/zscaler-internet-access-openpipeline.yaml` — OpenPipeline pipeline settings for Smartscape device extraction (safe to `dtctl apply -f` directly — this schema is multi-object).
 - `reference/zscaler-internet-access/zscaler-internet-access-openpipeline-routing-entry.json` — the single routing entry shape expected by `scripts/apply-openpipeline-routing.sh`. This is a *fragment*, not a full settings document — never `dtctl apply -f` it directly (see CRITICAL note in "Create Dynatrace entities").
 
 The agent must **mirror the structure** of these examples.
@@ -697,7 +697,7 @@ Use the `dt-app-dashboards`, `dt-dql-essentials`, `dt-app-notebooks`, and
 
 ## Phase 3 — Create Dynatrace entities (Gen 3 / Grail tenants)
 
-On Gen 3 / Grail-native tenants the classic entity APIs are unavailable. The
+On Gen 3 / Grail-native tenants the classic device APIs are unavailable. The
 only reliable path to create topology entities from BizEvents is
 **OpenPipeline `smartscapeNode` processors**.
 
@@ -729,20 +729,20 @@ only reliable path to create topology entities from BizEvents is
    > merged list so every other technology's and every hand-built entry
    > survives untouched.
 3. As BizEvents arrive the pipeline extracts Smartscape nodes automatically.
-   Entity IDs are written back to the processed event.
+   Device IDs are written back to the processed event.
 
 ### `smartscapeNode` processor key fields
 
 ```json
 {
-  "id": "extract-<entity-slug>",
+  "id": "extract-<device-slug>",
   "type": "smartscapeNode",
   "enabled": true,
-  "matcher": "event.type == \"<event.type that carries entity fields>\"",
+  "matcher": "event.type == \"<event.type that carries device fields>\"",
   "smartscapeNode": {
     "extractNode": true,
     "nodeType": "CUSTOM_<ENTITY_TYPE>",
-    "nodeIdFieldName": "dt.entity.custom_<entity_type>",
+    "nodeIdFieldName": "dt.entity.custom_<device_type>",
     "idComponents": [
       { "idComponent": "<prefix>", "referencedFieldName": "<unique_field>" }
     ],
@@ -751,7 +751,7 @@ only reliable path to create topology entities from BizEvents is
       "field": { "sourceFieldName": "<display_name_field>", "defaultValue": "Unknown" }
     },
     "fieldsToExtract": [
-      { "referencedFieldName": "<event_field>", "fieldName": "<entity_property>" }
+      { "referencedFieldName": "<event_field>", "fieldName": "<device_property>" }
     ]
   }
 }
@@ -764,7 +764,7 @@ only reliable path to create topology entities from BizEvents is
 - Entities appear in **Explorer Classic** (Infrastructure & Operations app → Smartscape). They do NOT appear in Explorer New without an Extension Framework 2.0 (EF2) extension.
 - **OpenPipeline cleanup order matters:** always remove this technology's routing *entry* (via `scripts/apply-openpipeline-routing.sh`'s companion removal in `cleanup-technology.sh` — never delete the shared routing object itself) **before** deleting its pipeline settings object. The API enforces a referential constraint — deleting a pipeline while any routing entry still points to it returns HTTP 400 "Constraints violated".
 
-### Entity type guidance
+### Device type guidance
 
 | Technology type | Recommended `nodeType` |
 |----------------|----------------------|
@@ -774,14 +774,14 @@ only reliable path to create topology entities from BizEvents is
 | Process / middleware | `CUSTOM_<TECHNOLOGY>_PROCESS` |
 | Any other | Propose `CUSTOM_<TECHNOLOGY>_<ENTITY>` and confirm with user |
 
-### MINT metric-entity association
+### MINT metric-device association
 
-Also create `<technology>-entity-creator.js` as a second workflow task that
+Also create `<technology>-device-creator.js` as a second workflow task that
 pushes MINT metric lines with `dt.entity.custom_<type>=<id>` dimensions. This
-pre-associates MINT metrics with the entity ID space. Note: the entity IDs
+pre-associates MINT metrics with the device ID space. Note: the device IDs
 generated by the script's hash function will differ from the IDs generated
 internally by OpenPipeline; the MINT metrics are still useful for querying
-by entity dimension even if the topology link is imprecise.
+by device dimension even if the topology link is imprecise.
 
 MINT line format (commas as separators — NOT semicolons):
 ```
@@ -803,7 +803,7 @@ proxy for both BizEvents and MINT metrics:
 | MINT metrics | `/platform/classic/environment-api/v2/metrics/ingest` |
 | Logs | `/platform/classic/environment-api/v2/logs/ingest` |
 
-Verify entity creation:
+Verify device creation:
 ```bash
 dtctl query "smartscapeNodes \"CUSTOM_<TYPE>\", from:now()-1h | limit 20" --plain
 ```
@@ -814,7 +814,7 @@ Use `reference/example-injector.js` and the `script`
 field in `example_data_injector.workflow.json` as the structural template.
 
 ### Requirements
-- **Data mapping** data - metrics and logs - should be attached to the entity or entities created when the technology's schema supports that relationship.
+- **Data mapping** data - metrics and logs - should be attached to the device or entities created when the technology's schema supports that relationship.
 - **Event types:** choose the smallest realistic set that covers the technology's use cases; typically 8–20 different types
   (`gaming.transaction`, `guest.checkin`, `equipment.telemetry`, ...).
 - **Field schema:** snake_case for all fields
@@ -914,7 +914,7 @@ another's.
    "Untitled dashboard" with name and ID detached. Re-applying with the
    wrapper fixes it in place (`ACTION = updated`).
 
-2. **Apply OpenPipeline entity settings:**
+2. **Apply OpenPipeline device settings:**
    ```bash
    dtctl apply -f "dashboards/<technology>/<technology>-openpipeline.json" --plain
    scripts/apply-openpipeline-routing.sh "dashboards/<technology>/<technology>-openpipeline-routing-entry.json"
@@ -941,7 +941,7 @@ another's.
    - Use a **unique** `position.{x, y}` within this workflow — duplicates
      produce a 400 error.
    - Set `predecessors: []` for tasks that should run independently, or list
-     the metrics task as a predecessor for logs/entity tasks that should run
+     the metrics task as a predecessor for logs/device tasks that should run
      after it succeeds.
    - `dtctl apply -f .tmp/workflow.json`
 

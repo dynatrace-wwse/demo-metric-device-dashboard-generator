@@ -195,7 +195,7 @@ tasks:
     conditions:
       states:
         zscaler_internet_access_v1: OK
-    description: Emit MINT metrics keyed by custom entity dimensions.
+    description: Emit MINT metrics keyed by custom device dimensions.
     input:
       script: |
         export default async function () {

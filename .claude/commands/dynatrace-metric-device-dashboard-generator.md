@@ -14,14 +14,14 @@ Follow `AGENTS.md` in this repository exactly. In particular:
 2. Verify `dtctl auth whoami` succeeds before doing anything else.
 3. **Show the active `dtctl` context to the user** (`dtctl ctx current` + `dtctl auth whoami`) and get explicit confirmation that the tenant is correct before any `dtctl apply` or `dtctl exec`.
 4. Mirror the structure of files in `.example/`.
-5. Use `skills/dynatrace-metric-entity-dashboard-generator/reference/zscaler-internet-access/` as the complete working reference
+5. Use `skills/dynatrace-metric-device-dashboard-generator/reference/zscaler-internet-access/` as the complete working reference
    for dashboard, injector, optional logs, OpenPipeline, workflow, and live
    validation patterns. Adapt its schema to the requested technology; do not
    copy Zscaler-specific fields or assume every technology needs a map.
 6. Output goes into `dashboards/<Technology>/`:
    - `<technology>-dashboard-v1.json`
    - `<technology>-injector.js`
-   - `<technology>-entity-creator.js`
+   - `<technology>-device-creator.js`
    - `<technology>-openpipeline.json`
    - `<technology>-openpipeline-routing.json`
    - `<technology>-logo.png` + `<technology>-logo.yaml` + `upload-logo.sh`

@@ -1,6 +1,6 @@
-# GitHub Copilot Instructions — Metric-Entity Dashboard Generator
+# GitHub Copilot Instructions — Metric-Device Dashboard Generator
 
-This repository is an **agent**: it generates a Dynatrace Gen 3 metric dashboard, metric injector, OpenPipeline entity pipeline, and Smartscape entity topology for a technology a user names.
+This repository is an **agent**: it generates a Dynatrace Gen 3 metric dashboard, metric injector, OpenPipeline device pipeline, and Smartscape device topology for a technology a user names.
 
 > **Read [AGENTS.md](../AGENTS.md) first.** It is the canonical instruction
 > set. The notes below are Copilot‑specific reinforcement.
@@ -13,7 +13,7 @@ This repository is an **agent**: it generates a Dynatrace Gen 3 metric dashboard
 4. Create `dashboards/<Technology>/` with these files:
    - `<technology>-dashboard-v1.json`
    - `<technology>-injector.js`
-   - `<technology>-entity-creator.js`
+   - `<technology>-device-creator.js`
    - `<technology>-openpipeline.json`
    - `<technology>-openpipeline-routing.json`
    - `README.md`, `LEARNINGS.md`, `SALES-PITCH.md`
@@ -35,18 +35,18 @@ This repository is an **agent**: it generates a Dynatrace Gen 3 metric dashboard
 - **Time charts use `makeTimeseries`** — never `summarize` into a chart.
 - All queries filter by `event.provider == "<technology>.event.provider"`.
 - Injector emits 3,000–5,000 events/run, batched in 500‑event POSTs.
-- **Entities via OpenPipeline only on Gen 3 tenants** — classic entity APIs unavailable. `CUSTOM_DEVICE` nodeType is blocked; use `CUSTOM_<TECHNOLOGY>_<ENTITY>`.
+- **Devices via OpenPipeline only on Gen 3 tenants** — classic device APIs unavailable. `CUSTOM_DEVICE` nodeType is blocked; use `CUSTOM_<TECHNOLOGY>_<DEVICE>`.
 - **MINT line format** — commas as dimension separators, NOT semicolons: `metric.key,dim1=val1 value ts`.
-- **Entity visibility** — OpenPipeline entities appear in Explorer Classic only, not Explorer New.
+- **Device visibility** — OpenPipeline devices appear in Explorer Classic only, not Explorer New.
 
 ## Reference implementation and adaptation
 
-Use `skills/dynatrace-metric-entity-dashboard-generator/reference/zscaler-internet-access/` as the working example for the
-complete lifecycle: dashboard, MINT metrics, optional logs, OpenPipeline entity
+Use `skills/dynatrace-metric-device-dashboard-generator/reference/zscaler-internet-access/` as the working example for the
+complete lifecycle: dashboard, MINT metrics, optional logs, OpenPipeline device
 extraction, shared workflow tasks, and live validation. Copy its structure,
 not its domain schema. Before generating, classify the technology as a
 device/network, runtime platform, database, application/service, business
-system, or security/control-plane use case and design the entity, KPIs, event
+system, or security/control-plane use case and design the device, KPIs, event
 types, logs, and map decision for that archetype.
 
 ## Workflow rule (do not violate)
