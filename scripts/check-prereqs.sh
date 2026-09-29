@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify prerequisites for the Metric-Entity Dashboard Generator agent.
+# Verify prerequisites for the Metric-Device Dashboard Generator agent.
 set -u
 
 red()   { printf '\033[31m%s\033[0m\n' "$*"; }

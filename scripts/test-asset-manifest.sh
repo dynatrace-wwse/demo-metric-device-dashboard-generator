@@ -12,7 +12,7 @@ cat > "$VALID" <<'JSON'
   "schemaVersion": 1,
   "technology": "example-runtime",
   "displayName": "Example Runtime",
-  "managedBy": "dynatrace-metric-entity-dashboard-generator",
+  "managedBy": "dynatrace-metric-device-dashboard-generator",
   "assetVersion": "v1",
   "provider": "example.runtime.event.provider",
   "workflow": { "id": "workflow-1", "tasks": ["example_runtime_v1"] },

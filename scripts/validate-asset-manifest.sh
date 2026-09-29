@@ -16,7 +16,7 @@ jq -e '
   (.schemaVersion | numbers) and
   (.technology | strings | length > 0) and
   (.displayName | strings | length > 0) and
-  (.managedBy == "dynatrace-metric-entity-dashboard-generator") and
+  (.managedBy == "dynatrace-metric-device-dashboard-generator") and
   (.assetVersion | strings | length > 0) and
   (.provider | strings | length > 0) and
   (.workflow.id | strings | length > 0) and

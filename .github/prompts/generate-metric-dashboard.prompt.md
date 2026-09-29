@@ -21,7 +21,7 @@ Then:
 4. Create `dashboards/<technology>/` with these files — using `.example/` as the structural template:
    - `<technology>-dashboard-v1.json`
    - `<technology>-injector.js`
-   - `<technology>-entity-creator.js`
+   - `<technology>-device-creator.js`
    - `<technology>-openpipeline.json`
    - `<technology>-openpipeline-routing.json`
    - `README.md`, `LEARNINGS.md`, `SALES-PITCH.md`

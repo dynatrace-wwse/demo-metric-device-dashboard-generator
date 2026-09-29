@@ -5,14 +5,14 @@ contains a dashboard, BizEvents injector, optional log injector, OpenPipeline
 Smartscape extraction settings, workflow task definition, and validation notes.
 
 Use the structure and validation approach as a pattern. Treat the event names,
-fields, entity type, thresholds, and Zscaler terminology as domain-specific.
+fields, device type, thresholds, and Zscaler terminology as domain-specific.
 
 ## Files
 
 - zscaler-internet-access-dashboard-v1.yaml
 - zscaler-internet-access-injector.js
 - zscaler-internet-access-log-injector.js
-- zscaler-internet-access-entity-creator.js
+- zscaler-internet-access-device-creator.js
 - zscaler-internet-access-openpipeline.yaml
 - zscaler-internet-access-openpipeline-routing-entry.json
 - zscaler-internet-access-workflow.yaml
@@ -29,7 +29,7 @@ fields, entity type, thresholds, and Zscaler terminology as domain-specific.
 - Example volume: 3,600 BizEvents and 1,800 logs per workflow run
 
 These values are examples for Zscaler only. New technology packs should define
-their own provider, entity type, fields, KPIs, event volume, and optional log
+their own provider, device type, fields, KPIs, event volume, and optional log
 schema.
 
 ## Deployment and Verification

@@ -1,4 +1,4 @@
-# Metric-Entity Dashboard Generator
+# Metric-Device Dashboard Generator
 
 An installable **AI agent** that, for any technology you name, generates a
 Dynatrace **Gen 3 metric dashboard** plus a **30‑minute MINT metrics injector**,
@@ -16,15 +16,15 @@ dashboards/<Technology>/
   asset-manifest.json                    # generator ownership and tenant resource IDs
   <technology>-dashboard-v1.json          # Gen 3 dashboard (logo, KPIs, charts, map)
   <technology>-injector.js               # 30-min MINT metrics injector
-  <technology>-entity-creator.js         # Workflow task: MINT ingest for metric-entity association
+  <technology>-device-creator.js         # Workflow task: MINT ingest for metric-device association
   <technology>-openpipeline.json         # OpenPipeline pipeline (smartscapeNode extraction)
   <technology>-openpipeline-routing.json # OpenPipeline routing rule
   README.md                              # IDs + deploy commands
-  LEARNINGS.md                           # DQL/layout notes, entity creation findings
+  LEARNINGS.md                           # DQL/layout notes, device creation findings
   SALES-PITCH.md                         # 1-page value pitch
 ```
 
-A single shared workflow `1.Metric Entity Dashboard Generator` runs every 30
+A single shared workflow `1.Metric Device Dashboard Generator` runs every 30
 minutes in your tenant. Each new technology is added as **tasks** inside that
 one workflow — the agent never creates a second injector workflow.
 
@@ -56,7 +56,7 @@ is not eligible for automatic deletion until a manifest is added.
 
 ### Reference example: Zscaler Internet Access
 
-The completed [Zscaler Internet Access reference pack](skills/dynatrace-metric-entity-dashboard-generator/reference/zscaler-internet-access/)
+The completed [Zscaler Internet Access reference pack](skills/dynatrace-metric-device-dashboard-generator/reference/zscaler-internet-access/)
 is the repository's reference implementation. It shows the full lifecycle:
 MINT metric ingest, optional synthetic logs, OpenPipeline Smartscape extraction, shared
 workflow tasks, dashboard thresholds, and live validation.
@@ -66,13 +66,13 @@ workflow tasks, dashboard thresholds, and live validation.
 ## Quick start (macOS / Linux)
 
 ```bash
-git clone https://github.com/Dynatrace-BrianWilson/dynatrace-metric-entity-dashboard-generator.git
-cd dynatrace-metric-entity-dashboard-generator
+git clone https://github.com/dynatrace-wwse/demo-metric-device-dashboard-generator.git
+cd demo-metric-device-dashboard-generator
 ./scripts/install.sh
 ```
 
 The installer installs `jq`, `dtctl`, and the agent skills (`dtctl`,
-`dynatrace-for-ai`, and `dynatrace-metric-entity-dashboard-generator`). If
+`dynatrace-for-ai`, and `dynatrace-metric-device-dashboard-generator`). If
 Claude Code is installed it also adds the plugin so `/generate-metric-dashboard`
 works globally.
 
@@ -147,7 +147,7 @@ Full spec: [AGENTS.md](AGENTS.md).
 ### Already have `dtctl` + Dynatrace skills installed?
 
 ```bash
-npx skills add Dynatrace-BrianWilson/dynatrace-metric-entity-dashboard-generator
+npx skills add dynatrace-wwse/demo-metric-device-dashboard-generator
 ```
 
 Updates: `npx skills update` and `claude plugin update …`.
@@ -156,8 +156,8 @@ Updates: `npx skills update` and `claude plugin update …`.
 
 ```bash
 mkdir -p ~/.agents/skills ~/.claude/commands
-ln -sfn "$PWD/skills/dynatrace-metric-entity-dashboard-generator" \
-  ~/.agents/skills/dynatrace-metric-entity-dashboard-generator
+ln -sfn "$PWD/skills/dynatrace-metric-device-dashboard-generator" \
+  ~/.agents/skills/dynatrace-metric-device-dashboard-generator
 ln -sfn "$PWD/.claude/commands/generate-metric-dashboard.md" \
   ~/.claude/commands/generate-metric-dashboard.md
 ln -sfn "$PWD/.claude/commands/cleanup-metric-dashboard.md" \
@@ -183,11 +183,11 @@ winget install jqlang.jq
 # 3. Skills
 npx skills add dynatrace-oss/dtctl
 npx skills add dynatrace/dynatrace-for-ai
-npx skills add Dynatrace-BrianWilson/dynatrace-metric-entity-dashboard-generator
+npx skills add dynatrace-wwse/demo-metric-device-dashboard-generator
 
 # 4. (Optional) Claude Code plugin
-claude plugin marketplace add Dynatrace-BrianWilson/dynatrace-metric-entity-dashboard-generator
-claude plugin install dynatrace-metric-entity-dashboard-generator@dynatrace-metric-entity-dashboard-generator
+claude plugin marketplace add dynatrace-wwse/demo-metric-device-dashboard-generator
+claude plugin install dynatrace-metric-device-dashboard-generator@dynatrace-metric-device-dashboard-generator
 ```
 
 Verify with `bash scripts/check-prereqs.sh` from Git Bash or WSL.
@@ -201,7 +201,7 @@ Verify with `bash scripts/check-prereqs.sh` from Git Bash or WSL.
 | **`dtctl`** authenticated to a Gen 3 tenant | Deploys dashboards + workflows, runs DQL | `dtctl auth whoami` |
 | **`dtctl` agent skill** | Teaches your agent how to operate `dtctl` | folder in `~/.agents/skills/dtctl/` |
 | **`dynatrace-for-ai` skills** | DQL, dashboards, notebooks domain knowledge | folders `dt-*` in `~/.agents/skills/` |
-| **`dynatrace-metric-entity-dashboard-generator` skill** | This agent | folder `~/.agents/skills/dynatrace-metric-entity-dashboard-generator/` |
+| **`dynatrace-metric-device-dashboard-generator` skill** | This agent | folder `~/.agents/skills/dynatrace-metric-device-dashboard-generator/` |
 | **`jq`** | Manipulates workflow JSON when adding tasks | `jq --version` |
 | **Node.js / `npx`** | Required by `npx skills add` | `node --version` |
 
@@ -218,9 +218,9 @@ Verify with `bash scripts/check-prereqs.sh` from Git Bash or WSL.
 ├── .claude-plugin/
 │   └── marketplace.json                   # Claude Code plugin manifest
 ├── plugins/
-│   └── dynatrace-metric-entity-dashboard-generator/
+│   └── dynatrace-metric-device-dashboard-generator/
 ├── skills/
-│   └── dynatrace-metric-entity-dashboard-generator/
+│   └── dynatrace-metric-device-dashboard-generator/
 │       ├── SKILL.md
 │       └── reference/
 ├── .github/

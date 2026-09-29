@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Build the redistributable skill bundle at
-# skills/dynatrace-metric-entity-dashboard-generator/ from AGENTS.md and the
+# skills/dynatrace-metric-device-dashboard-generator/ from AGENTS.md and the
 # checked-in reference assets. Run this whenever the agent instructions or
 # reference assets change.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SKILL_NAME="dynatrace-metric-entity-dashboard-generator"
+SKILL_NAME="dynatrace-metric-device-dashboard-generator"
 SKILL_DIR="$ROOT/skills/$SKILL_NAME"
 REF_DIR="$SKILL_DIR/reference"
 
@@ -25,8 +25,8 @@ fi
 # --- SKILL.md = frontmatter + AGENTS.md (with .example/ -> reference/ rewrites)
 cat > "$SKILL_DIR/SKILL.md" <<'FRONTMATTER'
 ---
-name: dynatrace-metric-entity-dashboard-generator
-description: Generate a Dynatrace Gen 3 **metric dashboard** (relevant metrics, optional map tile, branded section dividers), a relevant Dynatrace entity to map metrics and logs to, and a matching 30‑minute MINT metrics injector for a named technology, then deploy both via `dtctl`. Triggers include phrases like "generate a metric dashboard", "build a metrics demo for <technology>", "spin up a metrics dashboard + injector", "/generate-technology-dashboard". Requires `dtctl` authenticated to a Dynatrace Gen 3 tenant.
+name: dynatrace-metric-device-dashboard-generator
+description: Generate a Dynatrace Gen 3 **metric dashboard** (relevant metrics, optional map tile, branded section dividers), a relevant Dynatrace device to map metrics and logs to, and a matching 30‑minute MINT metrics injector for a named technology, then deploy both via `dtctl`. Triggers include phrases like "generate a metric dashboard", "build a metrics demo for <technology>", "spin up a metrics dashboard + injector", "/generate-technology-dashboard". Requires `dtctl` authenticated to a Dynatrace Gen 3 tenant.
 ---
 
 FRONTMATTER

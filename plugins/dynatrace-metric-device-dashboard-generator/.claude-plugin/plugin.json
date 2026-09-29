@@ -1,11 +1,11 @@
 {
-  "name": "dynatrace-metric-entity-dashboard-generator",
+  "name": "dynatrace-metric-device-dashboard-generator",
   "version": "0.1.0",
   "description": "Generate a Dynatrace Gen 3 metric dashboard, MINT metrics injector, OpenPipeline entity pipeline, and Smartscape topology for any technology. Bundles the skill and the /generate-metric-dashboard slash command.",
   "author": {
-    "name": "Dynatrace-BrianWilson",
-    "url": "https://github.com/Dynatrace-BrianWilson"
+    "name": "dynatrace-wwse",
+    "url": "https://github.com/dynatrace-wwse"
   },
-  "homepage": "https://github.com/Dynatrace-BrianWilson/dynatrace-metric-entity-dashboard-generator",
+  "homepage": "https://github.com/dynatrace-wwse/demo-metric-device-dashboard-generator",
   "license": "MIT"
 }
