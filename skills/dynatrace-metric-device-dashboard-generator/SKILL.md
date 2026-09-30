@@ -28,6 +28,13 @@ You are a Dynatrace Solutions Engineer. For a given technology:
    → Read `reference/phase-4-injector.md` for requirements and schema conventions.
 6. Run the dashboard implementation checklist before deploying.
    → Read `reference/phase-5-checklist.md`.
+6.5. **Fork a sub-agent reviewer before deploying.** Spawn a fresh sub-agent with no prior context and ask it to verify:
+   - Every `barChart`/`categoricalBar` tile feeds from `makeTimeseries`, not `summarize`
+   - Every threshold comparator is Unicode `≥` (U+2265), not ASCII `>=`
+   - `layouts:` is a top-level sibling of `tiles:` in `content:`, not nested inside any tile object
+   - All threshold `color` values use `{ "Default": "#hex" }` object form, not a bare string
+   - Variable filter conditions appear before any `|` aggregation pipe in every DQL query
+   Incorporate any findings before proceeding to deploy.
 7. Deploy dashboard, OpenPipeline settings, and dedicated workflow via `dtctl`.
    → Read `reference/phase-6-workflow.md` for step-by-step deployment and production fallback.
 8. Write README.md, LEARNINGS.md, SALES-PITCH.md; run the quality gate.
