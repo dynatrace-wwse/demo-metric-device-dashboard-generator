@@ -72,6 +72,32 @@ with plain `| filter in(<field>, $<Var>)` — **no** `array_size($Var)
 == 0` escape clause (it breaks the filter; default-all already returns
 all rows when `defaultSelectAll: true` is set).
 
+**CRITICAL — Gen 3 variable JSON schema is flat, not nested.** The `type`, `defaultSelectAll`,
+`multiple`, `editable`, and `version` fields belong at the top level of each variable object.
+`input` is a plain DQL string — NOT a nested object. Using a nested `input: { type: "query", ... }`
+structure causes "Missing required property 'type'" on every variable.
+
+Correct form (copy this exactly):
+
+```json
+{
+  "key": "Region",
+  "name": "Region",
+  "type": "query",
+  "visible": true,
+  "editable": true,
+  "multiple": true,
+  "defaultSelectAll": true,
+  "version": 3,
+  "input": "fetch bizevents | filter event.provider == \"<company>.event.provider\" | fields <field> | dedup <field>"
+}
+```
+
+❌ WRONG — nested input object (causes validation error):
+```json
+{ "key": "Region", "visible": true, "input": { "type": "query", "defaultSelectAll": true, "multiple": true, "query": "..." } }
+```
+
 Rules:
 1. **Always include `"defaultSelectAll": true`** on every query variable. Without it, Dynatrace
    may pre-select the first query result rather than all values, and the dashboard opens with
