@@ -48,6 +48,12 @@ The OpenPipeline **routing** entry is one row inside a tenant-wide singleton —
 by `description` in `resources.routingEntries` and remove only that entry on cleanup.
 **Never `dtctl apply -f` a routing file directly** — always use `scripts/apply-openpipeline-routing.sh`.
 
+**Use the reference template** — copy and adapt
+`reference/zscaler-internet-access/asset-manifest.json` for every new technology.
+Do NOT invent the schema from scratch; the validator enforces a specific shape
+(`schemaVersion`, `workflow.id`, `entity.nodeType`, `resources.dashboard[]`, etc.)
+that differs from earlier hand-written manifests in `dashboards/`.
+
 Validate with `scripts/validate-asset-manifest.sh` before deployment.
 → See `reference/phase-6-workflow.md` for cleanup steps.
 

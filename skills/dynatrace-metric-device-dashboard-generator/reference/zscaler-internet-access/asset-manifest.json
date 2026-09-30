@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "managedBy": "dynatrace-metric-device-dashboard-generator",
+  "technology": "Zscaler Internet Access",
+  "displayName": "Zscaler Internet Access | Operations Dashboard",
+  "assetVersion": "v1",
+  "provider": "zscaler.zia.event.provider",
+  "logSource": "zscaler.zia.synthetic",
+  "tenant": "https://kfc0436h.sprint.apps.dynatracelabs.com",
+  "created": "2026-08-20",
+  "workflowDurationDays": 7,
+  "workflow": {
+    "id": "9c0b35d6-a22f-46d8-8574-ac8f5b03f03e",
+    "title": "1.Metrics Dashboard Generator",
+    "file": "zscaler-internet-access-workflow.yaml",
+    "tasks": [
+      "zscaler_internet_access_v1",
+      "zscaler_internet_access_logs_v1",
+      "zscaler_internet_access_entities_v1"
+    ]
+  },
+  "entity": {
+    "nodeType": "CUSTOM_ZIA_NODE",
+    "idPrefix": "zia-node"
+  },
+  "resources": {
+    "dashboard": [
+      {
+        "type": "dashboard",
+        "id": "6484dc84-ee19-4a7d-8787-dc66337b1463",
+        "name": "Zscaler Internet Access | Operations Dashboard",
+        "file": "zscaler-internet-access-dashboard-v1.yaml"
+      }
+    ],
+    "settings": [
+      {
+        "type": "builtin:openpipeline.bizevents.pipelines",
+        "id": "vu9U3hXa3q0AAAABAChidWlsdGluOm9wZW5waXBlbGluZS5iaXpldmVudHMucGlwZWxpbmVzAAZ0ZW5hbnQABnRlbmFudAAkNDI2Y2NhZjctMTAxNS0zZjljLWIwMDUtMTM0ZmQ2NzBiNTUyvu9U3hXa3q0",
+        "customId": "zscaler-zia-topology",
+        "file": "zscaler-internet-access-openpipeline.yaml"
+      }
+    ],
+    "documents": [
+      {
+        "type": "image",
+        "id": "zscaler-zia-logo",
+        "name": "Zscaler ZIA Dashboard Logo"
+      }
+    ],
+    "routingEntries": [
+      {
+        "description": "Zscaler ZIA topology extraction pipeline",
+        "matcher": "event.provider == \"zscaler.zia.event.provider\"",
+        "file": "zscaler-internet-access-openpipeline-routing-entry.json"
+      }
+    ]
+  }
+}
