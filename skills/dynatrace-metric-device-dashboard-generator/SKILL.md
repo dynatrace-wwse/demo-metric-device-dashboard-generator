@@ -119,7 +119,17 @@ moving on. Never silently use a value the user has not explicitly confirmed in t
 | 3 | **Logo image or URL** | Optional | Local file path or public URL. If omitted, search the web and verify before using. |
 | 4 | **Workflow duration in days** | Optional | Default `7`; use `0` for no expiry. |
 
-Also decide: does this technology warrant a log injector? Security tools, CI/CD, audit-heavy systems, and any Hub page mentioning "logs" → always yes. Network/pure-metrics → probably not. Confirm with the user.
+**Log injector decision — research first, then decide:**
+
+Before asking the user about logs, the agent must independently determine whether logs are warranted by researching the technology directly:
+
+1. **Read the Hub page** (if provided or found) and look for log-related extensions, log sources, or access/audit references.
+2. **Apply the archetype heuristic** (see `reference/phase-1-planning.md` — Log decision section).
+3. **State your reasoning explicitly** in the pre-work summary: name the specific log sources the technology produces and why they belong on the dashboard.
+
+Do NOT base this decision on what other technologies in this repository included or excluded. Every technology has its own log story and must be evaluated independently.
+
+Present the log decision to the user with reasoning — not just yes/no — and let them override it.
 
 → Read `reference/inputs.md` for logo verification curl command, known CDN behaviors, and Document API upload steps.
 
@@ -134,7 +144,7 @@ After all inputs are confirmed, display this table and wait for user confirmatio
 | Hub / metrics link | <value or "none">                          |
 | Logo               | <value or "none">                          |
 | Workflow duration  | <N> days                                   |
-| Log injector       | <yes / no>                                 |
+| Log injector       | <yes / no — with one-line reason>          |
 | Target tenant      | <tenant URL from dtctl context>            |
 ```
 

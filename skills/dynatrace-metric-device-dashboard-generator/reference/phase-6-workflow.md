@@ -111,15 +111,38 @@ silently deploying an unlimited workflow.
    The workflow itself still exists for scheduled 30-minute runs if/when Automation
    authorization is later configured. Do not delete it.
 
-7. **Verify ingestion — account for fresh-tenant indexing delay:**
+7. **Verify BizEvents ingest — account for fresh-tenant indexing delay:**
    On a production tenant seeing BizEvents for the first time, the Grail index may
    lag several seconds. Always use an explicit short window for the first check:
-   ```dql
-   fetch bizevents, from:now()-30m
-   | filter event.provider == "<company>.event.provider"
-   | summarize total = count(), types = countDistinct(event.type)
+   ```bash
+   dtctl query "fetch bizevents, from:now()-30m | filter event.provider == \"<company>.event.provider\" | summarize total = count(), types = countDistinct(event.type)" -o json --plain
    ```
-   If that also returns 0, wait 15–30 seconds and retry before concluding ingest failed.
+   If that returns 0, wait 15–30 seconds and retry before concluding ingest failed.
+
+8. **Verify entity creation:**
+   OpenPipeline smartscapeNode extraction is asynchronous — entities typically appear
+   within 1–5 minutes of the first ingest. Use the `smartscapeNodes` census query:
+   ```bash
+   dtctl query 'smartscapeNodes "CUSTOM_<TYPE>" | summarize count()' -o json --plain
+   ```
+   This returns `{"count()": "N"}`. A non-zero N confirms entities exist.
+
+   **CRITICAL — do not use these broken alternatives:**
+   - `fetch dt.entity.custom_<type>` — this is an event-lookback view, not a topology
+     census; it returns nothing for newly created custom types even when entities exist.
+   - `smartscapeNodes "CUSTOM_<TYPE>", from:now()-1h` — invalid DQL; `from:` is not
+     valid in that position and throws a parse error every time.
+
+   **Poll loop (if entities have not appeared yet):**
+   ```bash
+   until dtctl query 'smartscapeNodes "CUSTOM_<TYPE>" | summarize count()' -o json --plain 2>/dev/null \
+     | python3 -c "import sys,json; r=json.load(sys.stdin); exit(0 if int(r.get('result',{}).get('records',[{}])[0].get('count()','0')) > 0 else 1)" 2>/dev/null; \
+   do sleep 10; done \
+   && echo "Entities found" \
+   && dtctl query 'smartscapeNodes "CUSTOM_<TYPE>" | summarize count()' -o json --plain
+   ```
+   Use `run_in_background: true` with a generous timeout (300 000 ms). Do not grep
+   for `"id"` — the `smartscapeNodes` result contains `count()`, never `id`.
 
 **Never merge this technology's tasks into another technology's workflow**,
 and never create a second workflow for the *same* technology when one already
