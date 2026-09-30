@@ -77,5 +77,24 @@ if [ "$MISSING_COUNT" -gt 0 ]; then
   exit 1
 fi
 
+# Check for ASCII >= comparators — Dynatrace silently ignores them; only Unicode ≥ (U+2265) fires.
+ASCII_GE="$(jq -r '
+  .result.content.tiles | to_entries[]
+  | select(.value.visualization == "singleValue")
+  | . as $tile
+  | (.value.visualizationSettings.thresholds // [])[]
+  | .rules[]?
+  | select(.comparator == ">=")
+  | "  tile \($tile.key) (\($tile.value.title // "untitled")): comparator is ASCII >= — must be Unicode ≥"
+' "$TMP_JSON" 2>/dev/null)"
+
+if [ -n "$ASCII_GE" ]; then
+  echo
+  red "Validation failed: ASCII >= comparator detected. Dynatrace silently ignores it — thresholds will never fire."
+  red "Fix: replace every \">=\" with the Unicode character ≥ (U+2265)."
+  printf "%s\n" "$ASCII_GE"
+  exit 1
+fi
+
 echo
-green "Validation passed: all ${REQUIRED_COUNT} required singleValue tiles have thresholds."
+green "Validation passed: all ${REQUIRED_COUNT} required singleValue tiles have thresholds with valid comparators."

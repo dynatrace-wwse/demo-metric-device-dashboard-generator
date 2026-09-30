@@ -48,3 +48,7 @@
 - [ ] `categoryOverrides` for semantic colors.
 - [ ] No red‑X tiles in preview.
 - [ ] Logo renders correctly; if a map is included, it renders correctly.
+- [ ] **Run `scripts/validate-dashboard-thresholds.sh <dashboard-id>` before declaring done.**
+  This script fails hard if any required `singleValue` tile has no thresholds, or if any
+  comparator uses ASCII `>=` instead of Unicode `≥` (U+2265). ASCII `>=` is silently
+  accepted by the API but never matches — all KPI tiles show no background color.
