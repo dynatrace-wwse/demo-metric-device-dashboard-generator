@@ -58,10 +58,11 @@ fetch bizevents | makeTimeseries revenue = sum(amount), by:{venue}, bins:20
 | sort total_calls, direction: desc
 ```
 
-✅ CORRECT — `direction` must be a quoted string:
+✅ CORRECT — `direction` must be a quoted string, or use the short `asc`/`desc` suffix:
 ```dql
 | sort total_calls, direction: "descending"
 | sort total_calls, direction: "ascending"
+| sort total_calls desc, other_field asc
 ```
 
 ## Multi-select variable filters

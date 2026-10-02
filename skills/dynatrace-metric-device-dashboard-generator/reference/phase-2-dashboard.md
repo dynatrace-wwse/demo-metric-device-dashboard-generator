@@ -2,27 +2,22 @@
 
 ## Header — required split layout
 
-Two side‑by‑side markdown tiles (NOT one combined tile, NOT HTML):
+Two side‑by‑side tiles (NOT one combined tile, NOT HTML): an `image` logo tile
+and a markdown title tile. Upload the logo first with `upload-logo.sh` (see
+`inputs.md`); a markdown `![](url)` logo depends on third-party hot-linking and breaks.
 
-```yaml
-tiles:
-  "0":  # Logo tile
-    type: markdown
-    content: "![](https://.../logo.svg)"
-  "1":  # Title tile
-    type: markdown
-    content: "# <Technology> | Operations Dashboard\n\nReal-time KPI monitoring..."
-layouts:
-  "0":
-    x: 0
-    "y": 0
-    w: 6
-    h: 2
-  "1":
-    x: 6
-    "y": 0
-    w: 18
-    h: 2
+```json
+"tiles": {
+  "0": { "type": "image",
+         "imageSettings": { "defaultSource": "/platform/document/v1/documents/<technology>-logo/content",
+                            "sizing": "fit", "horizontalAlignment": "center", "verticalAlignment": "center" } },
+  "1": { "type": "markdown",
+         "content": "# <Technology> | Operations Dashboard\n\nReal-time KPI monitoring..." }
+},
+"layouts": {
+  "0": { "x": 0, "y": 0, "w": 6,  "h": 2 },
+  "1": { "x": 6, "y": 0, "w": 18, "h": 2 }
+}
 ```
 
 > **CRITICAL — layout format:** Tile positions are defined in a **separate `layouts:` mapping** at the `content` level — they are NOT embedded inside the tile object itself. `layouts` is a sibling of `tiles`, not a child. Embedding `layout: {x,y,w,h}` inside a tile is silently ignored; the dashboard renders with all tiles stacked in a default grid.
@@ -72,16 +67,21 @@ Example divider:
       "prefixIcon": "GridIcon",
       "colorThresholdTarget": "background"
     },
-    "thresholds": [
-      { "id": 1, "field": "section", "title": "", "isEnabled": true, "rules": [
-        { "id": 1, "color": { "Default": "#2980B9" }, "comparator": "!=", "label": "", "value": "1" }
-      ]}
-    ]
+    "coloring": {
+      "colorRules": [
+        { "value": "1", "comparator": "!=", "field": "section",
+          "colorMode": "custom-color", "customColor": { "Default": "#2980B9" } }
+      ]
+    }
   }
 }
 ```
 
-> **CRITICAL — threshold color format:** Colors in threshold rules must use the object form `{ "Default": "#hex" }`, **not** a bare hex string `"#hex"`. A bare string is silently accepted but does not apply correctly. This applies to every `color` field inside every threshold rule across all tile types.
+> **CRITICAL — threshold schema:** Gen 3 `singleValue` color rules live in
+> `visualizationSettings.coloring.colorRules`, each with `colorMode: "custom-color"` and
+> `customColor` in the object form `{ "Default": "#hex" }` — **not** a bare hex string.
+> The older `visualizationSettings.thresholds[].rules[]` shape is not what the tenant
+> persists, and `scripts/validate-dashboard-thresholds.sh` only checks `coloring.colorRules`.
 
 ## Tile height guidelines
 
@@ -168,9 +168,10 @@ values on a `data` (or `code`) tile:
 - **`funnel`** — sequential conversion steps.
 - **`scatterplot`** — two-variable correlation (x vs y field).
 - **`singleValue`** — KPIs. Apply a **gauge feel** by attaching three
-  threshold `colorRules` with `colorThresholdTarget: "background"` and
-  `customColor` from `var(--dt-colors-charts-status-{success,warning,critical}-default, ...)`.
-  Comparator `≥` (Unicode). **`colorRules` ordering with `≥`: lowest threshold value first,
+  `coloring.colorRules` with `colorThresholdTarget: "background"` and
+  `customColor: { "Default": "#2a7452" | "#eea53c" | "#c62239" }` (good / warning / critical).
+  Comparator `≥` (Unicode). Example rule:
+  `{ "value": 75, "comparator": "≥", "field": "<recordField>", "colorMode": "custom-color", "customColor": { "Default": "#eea53c" } }`. **`colorRules` ordering with `≥`: lowest threshold value first,
   highest threshold value last** — Dynatrace applies the last matching rule, so the highest
   threshold must be at the bottom to "win". Reversing this order causes all values to show the
   wrong color. Gen 3 has no separate `gauge` viz type — this IS the gauge.

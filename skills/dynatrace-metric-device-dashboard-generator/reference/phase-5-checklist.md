@@ -18,7 +18,7 @@
 
 ## Tile creation
 
-- [ ] Logo tile (markdown, `h:2`, `w:6`).
+- [ ] Logo tile (`type: image`, `h:2`, `w:6`), logo uploaded with `upload-logo.sh`.
 - [ ] Title tile (markdown, `h:2`, `w:18`).
 - [ ] Map included only when geographic data is meaningful; if included,
       verify it uses usable coordinates and an intentional layout position.
@@ -39,7 +39,7 @@
 - [ ] Consistent X positions (`0, 6, 12, 18`).
 - [ ] Y gaps minimized (`+1` to `+2`).
 - [ ] **All tile positions are in the `content.layouts` section** (sibling of `content.tiles`), NOT embedded inside individual tile objects.
-- [ ] All threshold `color` values use `{ "Default": "#hex" }` object form, not bare `"#hex"` strings.
+- [ ] All `singleValue` thresholds are in `visualizationSettings.coloring.colorRules` with `customColor: { "Default": "#hex" }` — not bare `"#hex"` strings, not the old `thresholds[].rules[]` shape.
 
 ## Styling & validation
 

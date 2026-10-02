@@ -14,19 +14,20 @@ This repository is an **agent**: it generates a Dynatrace Gen 3 metric dashboard
    - `<technology>-dashboard-v1.json`
    - `<technology>-injector.js`
    - `<technology>-device-creator.js`
+   - `<technology>-workflow.yaml`, `asset-manifest.json`
    - `<technology>-openpipeline.json`
-   - `<technology>-openpipeline-routing.json`
+   - `<technology>-openpipeline-routing-entry.json`
    - `README.md`, `LEARNINGS.md`, `SALES-PITCH.md`
-4. Apply the OpenPipeline settings with `dtctl apply` before running the workflow — entities are created by the pipeline as MINT metrics arrive.
-5. Mirror the shape of files in `.example/`.
+5. Apply the OpenPipeline pipeline with `dtctl apply`, then merge the routing entry with `scripts/apply-openpipeline-routing.sh` (never `dtctl apply -f` a routing file), before running the workflow — entities are extracted by the pipeline as BizEvents arrive.
+6. Mirror the shape of `skills/dynatrace-metric-device-dashboard-generator/reference/zscaler-internet-access/`.
 
 ## Hard rules
 
-- **Gen 3 dashboard JSON only** — match `.example/example_dashboard.json`.
+- **Gen 3 dashboard JSON only** — `{ name, type: "dashboard", isPrivate, content: { version, variables, tiles, layouts } }`; `layouts` is a sibling of `tiles`. `singleValue` thresholds live in `visualizationSettings.coloring.colorRules`.
 - **Map tile is optional** — `bubbleMap` over geo coordinates emitted by the injector.
 - **`bubbleMap` regions** — always set `"regions": { "showRegions": false }`. Never specify region codes; mixed/unknown codes cause "Failed to load map data". The map auto-fits to data points.
 - **Inputs — ask upfront if not provided** (all optional, never block): Dynatrace Hub link (`https://www.dynatrace.com/hub/detail/<technology>/`) and logo image/URL. If hub link missing, search the Hub. If logo missing, search the web; fall back to text-only header.
-- **Logo + Title** are TWO tiles: `type: image` (`w:6,h:2`) + markdown title (`w:18,h:2`). Upload logo via `bash upload-logo.sh <file> <id> "<desc>"` (no Python — uses `base64`, `fold`, `dtctl apply`), then set `imageSettings.defaultSource: "/platform/document/v1/documents/<id>/content"`.
+- **Logo + Title** are TWO tiles: `type: image` (`w:6,h:2`) + markdown title (`w:18,h:2`). Upload logo via `bash upload-logo.sh <file> <id> "<desc>"` (uses `dtctl exec function` with FormData/Blob — never `dtctl apply` with `!!binary` YAML), then set `imageSettings.defaultSource: "/platform/document/v1/documents/<id>/content"`.
 - **Tile types**: `data` (DQL), `markdown` (text/images), `code` (Dynatrace Functions JS — useful for USQL/metric selectors/external APIs), `image` (native image tile — `imageSettings.defaultSource: "/platform/document/v1/documents/<id>/content"`; sizing: `"fit"` or `"fill"`; image must be uploaded to Dynatrace Documents API first).
 - **Charts use `h:4`+, KPIs use `h:2`.**
 - **`singleValue` `≥` color rules** — lowest threshold first, highest threshold last. Dynatrace applies the last matching rule; reversing the order causes all values to show the wrong color.
@@ -51,18 +52,21 @@ types, logs, and map decision for that archetype.
 
 ## Workflow rule (do not violate)
 
-There is **one injector workflow per tenant**. Always look for it first:
+There is **one injector workflow per technology**, titled `<Technology> | Injector Workflow`.
+Check whether this technology already has one:
 
 ```bash
 dtctl get workflows -o json --plain | \
-  jq '.[] | select(.title | test("Technology Dashboard Generator|injector"; "i"))'
+  jq --arg t "<Technology> | Injector Workflow" '(.result // .)[] | select(.title == $t)'
 ```
 
-- **Found?** Add a new task `<technology>_v1` to it and `dtctl apply -f`.
-- **Not found?** (first‑ever run on this tenant) create from
-  `.example/example_data_injector.workflow.json`.
+- **Found?** Add versioned tasks (`<technology>_v2`, …) to it and `dtctl apply -f`.
+- **Not found?** (normal first run) create it from
+  `skills/dynatrace-metric-device-dashboard-generator/reference/zscaler-internet-access/zscaler-internet-access-workflow.yaml`.
 
-Never create a second injector workflow.
+Never add tasks to another technology's workflow, and never create a second
+workflow for the same technology. Duration is enforced by the `EXPIRES_AT` guard
+in every task; cleanup deletes the workflow entirely.
 
 ## Tools / skills to prefer
 

@@ -18,7 +18,8 @@ dashboards/<Technology>/
   <technology>-injector.js               # 30-min MINT metrics injector
   <technology>-device-creator.js         # Workflow task: MINT ingest for metric-device association
   <technology>-openpipeline.json         # OpenPipeline pipeline (smartscapeNode extraction)
-  <technology>-openpipeline-routing.json # OpenPipeline routing rule
+  <technology>-openpipeline-routing-entry.json # one routing entry, merged via scripts/apply-openpipeline-routing.sh
+  <technology>-workflow.yaml             # dedicated <Technology> | Injector Workflow
   README.md                              # IDs + deploy commands
   LEARNINGS.md                           # DQL/layout notes, device creation findings
   SALES-PITCH.md                         # 1-page value pitch
@@ -134,9 +135,9 @@ The agent confirms your active tenant before touching anything, then asks for
 the technology name, an optional Dynatrace Hub link, and logo URL (it
 searches if you don't provide one). It researches relevant metrics, writes
 the full file set into `dashboards/<Technology>/`,
-deploys the dashboard and OpenPipeline settings via `dtctl apply`, adds two
-tasks to the shared injector workflow, executes the workflow, and verifies that
-MINT metrics and Smartscape entities are landing.
+deploys the dashboard and OpenPipeline settings via `dtctl apply`, creates the
+technology's own `<Technology> | Injector Workflow`, executes it, and verifies that
+events, logs, MINT metrics, and Smartscape entities are landing.
 
 Full spec: [AGENTS.md](AGENTS.md).
 

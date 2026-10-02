@@ -106,7 +106,8 @@ proxy for both BizEvents and MINT metrics:
 | MINT metrics | `/platform/classic/environment-api/v2/metrics/ingest` |
 | Logs | `/platform/classic/environment-api/v2/logs/ingest` |
 
-Verify device creation:
+Verify device creation (extraction takes 1–5 minutes after the first ingest):
 ```bash
-dtctl query "smartscapeNodes \"CUSTOM_<TYPE>\", from:now()-1h | limit 20" --plain
+dtctl query 'smartscapeNodes "CUSTOM_<TYPE>" | summarize count()' -o json --plain
 ```
+Do not add `from:` — it is invalid in that position. See `phase-6-workflow.md` step 8.
