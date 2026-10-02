@@ -18,22 +18,24 @@ Then:
 1. Run `dtctl auth whoami` to confirm tenant access.
 2. **Display the active `dtctl` context** (`dtctl ctx current` + `dtctl auth whoami`) and ask the user to confirm the tenant before applying or executing anything.
 3. Research relevant metrics for the technology.
-4. Create `dashboards/<technology>/` with these files — using `.example/` as the structural template:
+4. Create `dashboards/<technology>/` with these files — using `skills/dynatrace-metric-device-dashboard-generator/reference/zscaler-internet-access/` as the structural template:
+   - `asset-manifest.json`
    - `<technology>-dashboard-v1.json`
-   - `<technology>-injector.js`
+   - `<technology>-injector.js`, optional `<technology>-log-injector.js`
    - `<technology>-device-creator.js`
+   - `<technology>-workflow.yaml`
    - `<technology>-openpipeline.json`
-   - `<technology>-openpipeline-routing.json`
+   - `<technology>-openpipeline-routing-entry.json`
    - `README.md`, `LEARNINGS.md`, `SALES-PITCH.md`
 5. The dashboard may include a `bubbleMap` tile fed by geo coordinates from the injector.
    - `bubbleMap`: always set `"regions": { "showRegions": false }` — never specify region codes; they cause "Failed to load map data".
-   - `singleValue` `≥` color rules: **lowest threshold value first, highest last**. Dynatrace applies the last matching rule; wrong order makes all values show the wrong color.
+   - `singleValue` thresholds go in `visualizationSettings.coloring.colorRules` (`customColor: { "Default": "#hex" }`, Unicode `≥`), **lowest threshold value first, highest last**. Dynatrace applies the last matching rule; wrong order makes all values show the wrong color.
    - `singleValue` `unitsOverrides`: always use `"unitCategory": "unspecified"` + `"baseUnit": "count"` for raw numeric values. Never use `unitCategory: "time"` — it auto-scales display (1000ms → "1s") but colorRule thresholds compare against raw values, causing wrong colors.
    - Query variables with `multiple: true` must include `"defaultSelectAll": true` so the dashboard opens with all values selected.
    - Logo tile uses `type: image` (not markdown). Upload with `bash upload-logo.sh <file> <id> "<desc>"` then reference `/platform/document/v1/documents/<id>/content` in `imageSettings.defaultSource`.
 6. `dtctl apply` the dashboard.
-7. `dtctl apply` the OpenPipeline pipeline and routing settings.
-8. Find the existing injector workflow (`dtctl get workflows`), append new tasks for the injector and entity creator, `dtctl apply` it, then `dtctl exec workflow`. Only create a new workflow if none exists in the tenant.
-9. Verify MINT metric ingest: `timeseries avg(<technology>.<primary_metric>), from: now()-5m`.
-10. Verify entities: `dtctl query "smartscapeNodes \"CUSTOM_<TYPE>\", from:now()-1h | limit 20" --plain`.
+7. `dtctl apply` the OpenPipeline pipeline, then merge the routing entry with `scripts/apply-openpipeline-routing.sh` — never `dtctl apply -f` a routing file (it is a tenant-wide singleton).
+8. Create this technology's own `<Technology> | Injector Workflow` (or add versioned tasks to its existing one — never to another technology's workflow). Enforce duration with the `EXPIRES_AT` guard in every task, never `latestStart`. Write and validate `asset-manifest.json`, then `dtctl exec workflow`.
+9. Verify MINT metric ingest: `timeseries avg(<technology>.<metric>), from:now()-1h`.
+10. Verify entities: `dtctl query 'smartscapeNodes "CUSTOM_<TYPE>" | summarize count()' -o json --plain` (no `from:` — invalid in that position).
 11. Report the dashboard URL, workflow ID, and task names back to the user.

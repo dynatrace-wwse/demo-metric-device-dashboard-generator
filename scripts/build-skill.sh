@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Build the redistributable skill bundle at
-# skills/dynatrace-metric-device-dashboard-generator/ from AGENTS.md and the
-# checked-in reference assets. Run this whenever the agent instructions or
-# reference assets change.
+# Canonical source: skills/dynatrace-metric-device-dashboard-generator/SKILL.md
+# This script generates AGENTS.md (for Copilot/Cursor users in this repo) by
+# stripping the Claude Code frontmatter block from SKILL.md.
+# Run whenever SKILL.md changes.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -10,34 +10,26 @@ SKILL_NAME="dynatrace-metric-device-dashboard-generator"
 SKILL_DIR="$ROOT/skills/$SKILL_NAME"
 REF_DIR="$SKILL_DIR/reference"
 
-mkdir -p "$REF_DIR"
-
-if [ ! -f "$ROOT/AGENTS.md" ]; then
-	echo "ERROR: canonical instructions not found: $ROOT/AGENTS.md" >&2
+if [ ! -f "$SKILL_DIR/SKILL.md" ]; then
+	echo "ERROR: canonical source not found: $SKILL_DIR/SKILL.md" >&2
 	exit 1
 fi
 
-if [ -z "$(find "$REF_DIR" -mindepth 1 -maxdepth 1 -print -quit)" ]; then
+if [ -z "$(find "$REF_DIR" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
 	echo "ERROR: no reference assets found in $REF_DIR" >&2
 	exit 1
 fi
 
-# --- SKILL.md = frontmatter + AGENTS.md (with .example/ -> reference/ rewrites)
-cat > "$SKILL_DIR/SKILL.md" <<'FRONTMATTER'
----
-name: dynatrace-metric-device-dashboard-generator
-description: Generate a Dynatrace Gen 3 **metric dashboard** (relevant metrics, optional map tile, branded section dividers), a relevant Dynatrace device to map metrics and logs to, and a matching 30‑minute MINT metrics injector for a named technology, then deploy both via `dtctl`. Triggers include phrases like "generate a metric dashboard", "build a metrics demo for <technology>", "spin up a metrics dashboard + injector", "/generate-technology-dashboard". Requires `dtctl` authenticated to a Dynatrace Gen 3 tenant.
----
+# Generate AGENTS.md: strip YAML frontmatter, prepend header comment
+{
+	echo "<!-- Generated from SKILL.md — for GitHub Copilot/Cursor users in this repo only."
+	echo "     This file does not ship with the distributed plugin. Run scripts/build-skill.sh to regenerate. -->"
+	echo ""
+	# Drop the opening ---, everything up to and including the closing ---, then the blank line after
+	awk '/^---$/{if(in_front){in_front=0;next}else{in_front=1;next}} in_front{next} !printed_first && /^$/{next} {printed_first=1; print}' "$SKILL_DIR/SKILL.md"
+} > "$ROOT/AGENTS.md"
 
-FRONTMATTER
-
-# Append AGENTS.md, rewriting legacy `.example/` references to the bundled
-# `reference/` path. Reference assets are already checked into REF_DIR and are
-# intentionally preserved rather than deleted and recopied from a missing
-# source directory.
-sed 's|\.example/|reference/|g' "$ROOT/AGENTS.md" >> "$SKILL_DIR/SKILL.md"
-
-echo "Built skill bundle at: $SKILL_DIR"
-ls -la "$SKILL_DIR"
+echo "Generated AGENTS.md from SKILL.md"
 echo "---"
-ls -la "$REF_DIR"
+echo "Skill bundle: $SKILL_DIR"
+ls -la "$SKILL_DIR"
