@@ -68,9 +68,11 @@ Validate with `scripts/validate-asset-manifest.sh` before deployment.
 
 ## Workflow duration
 
-Default: 7-day expiry, 30-minute interval. Ask the user; `0` = unlimited. Each
-technology has its own dedicated workflow — setting expiry for one never affects another.
-→ See `reference/phase-6-workflow.md` for schedule YAML format and post-apply verification.
+Default: 7-day expiry, 30-minute interval. Ask the user; `0` = unlimited. Expiry is
+an `EXPIRES_AT` guard in every task script — never `latestStart`, which does not stop
+the schedule. Each technology has its own dedicated workflow — setting expiry for one
+never affects another. Cleanup deletes the workflow entirely.
+→ See `reference/phase-6-workflow.md` for the guard format.
 
 ---
 

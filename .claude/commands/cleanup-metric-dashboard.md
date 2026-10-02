@@ -27,7 +27,8 @@ engine and keep the operation dry-run by default.
    ./scripts/cleanup-technology.sh --technology <slug> --confirm --yes
    ```
 6. Report each deleted resource, any resources that remain, and the retained
-   telemetry. Never delete the shared workflow.
+   telemetry. The technology's `<Technology> | Injector Workflow` is deleted
+   entirely; if the script reports it still present, treat cleanup as failed.
 
 Do not infer ownership from a dashboard title alone. Require a valid
 `asset-manifest.json`; if the pack has no manifest, stop after discovery and

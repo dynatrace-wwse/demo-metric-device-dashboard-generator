@@ -13,6 +13,6 @@ engine and keep the operation dry-run by default.
 3. Show the complete plan, active tenant, authenticated identity, retained telemetry, and unsupported cleanup items.
 4. Require explicit tenant confirmation and typed technology-slug confirmation.
 5. Only then run `./scripts/cleanup-technology.sh --technology <slug> --confirm --yes`.
-6. Report deleted and retained resources. Never delete the shared workflow.
+6. Report deleted and retained resources. The technology's `<Technology> | Injector Workflow` is deleted entirely; if the script reports it still present, treat cleanup as failed.
 
 Require a valid `asset-manifest.json`; do not infer ownership from names alone.

@@ -9,7 +9,7 @@ This repository is an **agent**: it generates a Dynatrace Gen 3 metric dashboard
 
 1. Confirm `dtctl auth whoami` works. If not, stop and ask the user to run `scripts/check-prereqs.sh`.
 2. **Show the active tenant context** (`dtctl ctx current` + `dtctl auth whoami`) and ask the user to confirm before any `apply`/`exec`. Never silently target whatever context is active.
-3. Ask how many days the scheduled workflow should run. Default to 7 days for a demo; use 0 for no automatic expiry. Do not alter the duration of an existing shared workflow unless explicitly requested.
+3. Ask how many days the scheduled workflow should run. Default to 7 days for a demo; use 0 for no automatic expiry. Enforce it with an `EXPIRES_AT` guard in every task script — never `latestStart`/`latestStartTime`, which do not stop the schedule (see `skills/dynatrace-metric-device-dashboard-generator/reference/phase-6-workflow.md`).
 4. Create `dashboards/<Technology>/` with these files:
    - `<technology>-dashboard-v1.json`
    - `<technology>-injector.js`
@@ -43,7 +43,7 @@ This repository is an **agent**: it generates a Dynatrace Gen 3 metric dashboard
 
 Use `skills/dynatrace-metric-device-dashboard-generator/reference/zscaler-internet-access/` as the working example for the
 complete lifecycle: dashboard, MINT metrics, optional logs, OpenPipeline device
-extraction, shared workflow tasks, and live validation. Copy its structure,
+extraction, its dedicated workflow, and live validation. Copy its structure,
 not its domain schema. Before generating, classify the technology as a
 device/network, runtime platform, database, application/service, business
 system, or security/control-plane use case and design the device, KPIs, event

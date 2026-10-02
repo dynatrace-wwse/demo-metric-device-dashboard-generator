@@ -11,7 +11,8 @@
   "workflowDurationDays": 7,
   "workflow": {
     "id": "9c0b35d6-a22f-46d8-8574-ac8f5b03f03e",
-    "title": "1.Metrics Dashboard Generator",
+    "title": "Zscaler Internet Access | Injector Workflow",
+    "expiresAt": "2026-08-27T00:00:00-07:00",
     "file": "zscaler-internet-access-workflow.yaml",
     "tasks": [
       "zscaler_internet_access_v1",

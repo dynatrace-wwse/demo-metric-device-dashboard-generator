@@ -24,13 +24,13 @@ dashboards/<Technology>/
   SALES-PITCH.md                         # 1-page value pitch
 ```
 
-A single shared workflow `1.Metric Device Dashboard Generator` runs every 30
-minutes in your tenant. Each new technology is added as **tasks** inside that
-one workflow — the agent never creates a second injector workflow.
+Each technology gets its own `<Technology> | Injector Workflow`, running every
+30 minutes in your tenant.
 
-Generated workflows can use a finite schedule window. During generation,
-provide the number of days to run; the default is 7 days, and `0` means no
-automatic expiry.
+During generation, provide the number of days to run; the default is 7 days,
+and `0` means no automatic expiry. Expiry is enforced by an `EXPIRES_AT` guard in
+each task script: after that date the schedule still fires but ingests nothing.
+Run cleanup to remove the workflow itself.
 
 ### Cleanup generated assets
 
@@ -46,10 +46,10 @@ technology-specific cleanup:
 ./scripts/test-asset-manifest.sh
 ```
 
-Cleanup removes dashboards, technology-specific OpenPipeline settings, logo
-documents, and the technology's tasks from the shared workflow. It never
-deletes the shared workflow. Historical metrics are retained according to
-tenant retention.
+Cleanup removes dashboards, technology-specific OpenPipeline settings, this
+technology's routing entry, and its dedicated injector workflow (deleted
+entirely; cleanup fails if it is still present). Logo documents require manual
+cleanup. Historical metrics are retained according to tenant retention.
 
 A technology folder without an `asset-manifest.json` is listed as legacy and
 is not eligible for automatic deletion until a manifest is added.

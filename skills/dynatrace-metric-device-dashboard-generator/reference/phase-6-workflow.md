@@ -6,7 +6,14 @@ expirations, and manual run/pause controls independent per technology: pausing,
 re-scheduling, or setting an expiration for one technology never touches
 another's.
 
-## Workflow duration schedule YAML
+## Workflow duration — enforced in each task script
+
+**Never use `latestStart` / `latestStartTime` in `filterParameters`.** Dynatrace
+accepts and persists them but they do NOT stop the schedule — workflows deployed
+with a past `latestStart` kept firing every 30 minutes for weeks.
+`scripts/validate-asset-manifest.sh` rejects any workflow file containing them.
+
+The schedule keeps only the start:
 
 ```yaml
 trigger:
@@ -14,16 +21,24 @@ trigger:
     filterParameters:
       earliestStart: "2026-08-20"
       earliestStartTime: "00:00"
-      latestStart: "2026-08-27"
-      latestStartTime: "00:00"
 ```
 
-The interval remains `30` minutes. `0` means omit the end parameters and leave
-the workflow running indefinitely. After applying a finite-duration workflow,
-read it back with `dtctl get workflow` and verify that the persisted schedule
-contains the intended end date. If the tenant rejects the end parameters, stop
-and report that native schedule expiry is unavailable in that tenant rather than
-silently deploying an unlimited workflow.
+Expiry is enforced by a guard on the **first two lines of every task script**
+(metrics, logs, entities):
+
+```js
+export default async function () {
+  const EXPIRES_AT = "2026-08-27T00:00:00-07:00"; // null = no expiry
+  if (EXPIRES_AT && Date.now() >= Date.parse(EXPIRES_AT)) return { status: "expired", expiresAt: EXPIRES_AT };
+  ...
+```
+
+- `EXPIRES_AT` = deploy date + duration days, midnight, with the workflow's
+  timezone offset. Duration `0` → `const EXPIRES_AT = null;` (guard stays present).
+- Record the same value in `asset-manifest.json` as `workflow.expiresAt`.
+- After expiry the schedule still fires but ingests nothing. The workflow itself
+  is removed only by `/cleanup-metric-dashboard`, which deletes it entirely.
+- The interval remains `30` minutes.
 
 ## Step‑by‑step
 
