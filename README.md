@@ -18,19 +18,20 @@ dashboards/<Technology>/
   <technology>-injector.js               # 30-min MINT metrics injector
   <technology>-device-creator.js         # Workflow task: MINT ingest for metric-device association
   <technology>-openpipeline.json         # OpenPipeline pipeline (smartscapeNode extraction)
-  <technology>-openpipeline-routing.json # OpenPipeline routing rule
+  <technology>-openpipeline-routing-entry.json # one routing entry, merged via scripts/apply-openpipeline-routing.sh
+  <technology>-workflow.yaml             # dedicated <Technology> | Injector Workflow
   README.md                              # IDs + deploy commands
   LEARNINGS.md                           # DQL/layout notes, device creation findings
   SALES-PITCH.md                         # 1-page value pitch
 ```
 
-A single shared workflow `1.Metric Device Dashboard Generator` runs every 30
-minutes in your tenant. Each new technology is added as **tasks** inside that
-one workflow — the agent never creates a second injector workflow.
+Each technology gets its own `<Technology> | Injector Workflow`, running every
+30 minutes in your tenant.
 
-Generated workflows can use a finite schedule window. During generation,
-provide the number of days to run; the default is 7 days, and `0` means no
-automatic expiry.
+During generation, provide the number of days to run; the default is 7 days,
+and `0` means no automatic expiry. Expiry is enforced by an `EXPIRES_AT` guard in
+each task script: after that date the schedule still fires but ingests nothing.
+Run cleanup to remove the workflow itself.
 
 ### Cleanup generated assets
 
@@ -46,10 +47,10 @@ technology-specific cleanup:
 ./scripts/test-asset-manifest.sh
 ```
 
-Cleanup removes dashboards, technology-specific OpenPipeline settings, logo
-documents, and the technology's tasks from the shared workflow. It never
-deletes the shared workflow. Historical metrics are retained according to
-tenant retention.
+Cleanup removes dashboards, technology-specific OpenPipeline settings, this
+technology's routing entry, and its dedicated injector workflow (deleted
+entirely; cleanup fails if it is still present). Logo documents require manual
+cleanup. Historical metrics are retained according to tenant retention.
 
 A technology folder without an `asset-manifest.json` is listed as legacy and
 is not eligible for automatic deletion until a manifest is added.
@@ -134,9 +135,9 @@ The agent confirms your active tenant before touching anything, then asks for
 the technology name, an optional Dynatrace Hub link, and logo URL (it
 searches if you don't provide one). It researches relevant metrics, writes
 the full file set into `dashboards/<Technology>/`,
-deploys the dashboard and OpenPipeline settings via `dtctl apply`, adds two
-tasks to the shared injector workflow, executes the workflow, and verifies that
-MINT metrics and Smartscape entities are landing.
+deploys the dashboard and OpenPipeline settings via `dtctl apply`, creates the
+technology's own `<Technology> | Injector Workflow`, executes it, and verifies that
+events, logs, MINT metrics, and Smartscape entities are landing.
 
 Full spec: [AGENTS.md](AGENTS.md).
 

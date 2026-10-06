@@ -14,9 +14,9 @@ Rules:
 - For a selected technology, run `./scripts/cleanup-technology.sh --technology <slug> --dry-run`.
 - Require a valid `asset-manifest.json`; do not infer ownership from names alone.
 - Show the active `dtctl` context and authenticated identity before any mutation.
-- Explain what can be deleted: technology dashboard, technology-specific settings, and that technology's tasks from the shared workflow.
+- Explain what can be deleted: technology dashboard, technology-specific settings, this technology's routing entry, and its dedicated `<Technology> | Injector Workflow` (deleted entirely).
 - Explain what is retained: historical metrics and logs, Smartscape entities unless supported deletion is verified, and documents requiring manual/platform-supported cleanup.
 - Ask the user to confirm both the tenant and the exact technology slug.
 - Only after explicit confirmation run `./scripts/cleanup-technology.sh --technology <slug> --confirm`.
-- Never delete the shared workflow.
+- If the script reports the workflow still present, treat cleanup as failed.
 - Report deleted resources, resources that remain, and retained telemetry.

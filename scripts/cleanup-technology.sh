@@ -95,10 +95,30 @@ fi
 [ -n "$TECHNOLOGY" ] || { usage >&2; exit 2; }
 MANIFEST="$(manifest_for "$TECHNOLOGY" || true)"
 [ -n "$MANIFEST" ] || fail "no asset manifest found for '$TECHNOLOGY'"
-"$VALIDATOR" "$MANIFEST" >/dev/null
+"$VALIDATOR" "$MANIFEST" --for-cleanup >/dev/null
 
 DISPLAY_NAME="$(jq -r '.displayName // .technology' "$MANIFEST")"
-WORKFLOW_ID="$(jq -r '.workflow.id // empty' "$MANIFEST")"
+MANIFEST_WORKFLOW_ID="$(jq -r '.workflow.id // empty' "$MANIFEST")"
+EXPECTED_WORKFLOW_TITLE="$(jq -r '.technology' "$MANIFEST") | Injector Workflow"
+
+# Match by manifest ID OR exact per-technology title, so a missing/stale ID in
+# the manifest cannot orphan a still-scheduled workflow. Anything matched by ID
+# whose title differs (e.g. the legacy shared workflow) is never deleted.
+workflow_matches() {
+  dtctl get workflows -o json --plain \
+    | jq -r --arg id "$MANIFEST_WORKFLOW_ID" --arg t "$EXPECTED_WORKFLOW_TITLE" \
+      '(.result // .)[] | select((.id == $id and $id != "") or .title == $t) | [.id, .title] | @tsv'
+}
+WORKFLOW_IDS=()
+SKIPPED_WORKFLOWS=()
+while IFS=$'\t' read -r wf_id wf_title; do
+  [ -n "$wf_id" ] || continue
+  if [ "$wf_title" = "$EXPECTED_WORKFLOW_TITLE" ]; then
+    WORKFLOW_IDS+=("$wf_id")
+  else
+    SKIPPED_WORKFLOWS+=("$wf_id ($wf_title)")
+  fi
+done < <(workflow_matches)
 
 echo "Technology: $DISPLAY_NAME ($TECHNOLOGY)"
 echo "Manifest: $MANIFEST"
@@ -112,7 +132,16 @@ jq -r '
   (.workflow.tasks[]? | "- workflow task \(. )")
 ' "$MANIFEST"
 echo
-echo "Workflow: ${WORKFLOW_ID:-none} (owned exclusively by this technology — will be deleted entirely)"
+if [ "${#WORKFLOW_IDS[@]}" -gt 0 ]; then
+  for wf in "${WORKFLOW_IDS[@]}"; do
+    echo "Workflow: $wf \"$EXPECTED_WORKFLOW_TITLE\" (owned exclusively by this technology — will be deleted entirely)"
+  done
+else
+  echo "Workflow: none found by manifest ID or title \"$EXPECTED_WORKFLOW_TITLE\""
+fi
+for wf in "${SKIPPED_WORKFLOWS[@]+"${SKIPPED_WORKFLOWS[@]}"}"; do
+  echo "WARNING: manifest workflow ID matches $wf, which is not titled \"$EXPECTED_WORKFLOW_TITLE\" — NOT deleted; review manually" >&2
+done
 echo "Retained telemetry: metrics and logs for this technology"
 echo "Smartscape entities: reported for follow-up; not assumed deletable"
 
@@ -125,6 +154,9 @@ IDENTITY="$(dtctl auth whoami --plain 2>/dev/null || true)"
 [ -n "$CURRENT_CONTEXT" ] || fail "unable to determine active dtctl context"
 [ -n "$IDENTITY" ] || fail "unable to determine authenticated identity"
 dtctl auth can-i delete dashboards --plain >/dev/null 2>&1 || fail "missing permission to delete dashboards"
+if [ "${#WORKFLOW_IDS[@]}" -gt 0 ]; then
+  dtctl auth can-i delete workflows --plain >/dev/null 2>&1 || fail "missing permission to delete workflows"
+fi
 echo
 echo "Active context: ${CURRENT_CONTEXT:-unknown}"
 echo "Authenticated identity: ${IDENTITY:-unknown}"
@@ -140,10 +172,10 @@ fi
 
 echo
 
-if [ -n "$WORKFLOW_ID" ]; then
-  echo "Deleting workflow $WORKFLOW_ID (owned exclusively by '$TECHNOLOGY')..."
-  delete_resource "workflow" "$WORKFLOW_ID"
-fi
+for wf in "${WORKFLOW_IDS[@]+"${WORKFLOW_IDS[@]}"}"; do
+  echo "Deleting workflow $wf (owned exclusively by '$TECHNOLOGY')..."
+  delete_resource "workflow" "$wf"
+done
 
 # Routing entries live inside a tenant-wide SINGLETON settings object
 # (builtin:openpipeline.bizevents.routing, maxObjects=1) shared by every
@@ -204,10 +236,18 @@ while IFS=$'\t' read -r resource_type resource_id; do
     echo "Verified absent: $resource_type $resource_id"
   fi
 done < <(jq -r '
-  (.resources.dashboard[]?, .resources.settings[]?) | [.type, .id],
-  (if (.workflow.id // empty) != "" then [ "workflow", .workflow.id ] else empty end)
+  (.resources.dashboard[]?, .resources.settings[]?) | [.type, .id]
   | @tsv
 ' "$MANIFEST")
+
+# A surviving workflow keeps injecting data on schedule, so treat it as a hard failure.
+remaining_workflows="$(dtctl get workflows -o json --plain \
+  | jq -r --arg t "$EXPECTED_WORKFLOW_TITLE" --argjson ids "$(printf '%s\n' "${WORKFLOW_IDS[@]+"${WORKFLOW_IDS[@]}"}" | jq -R 'select(length > 0)' | jq -s .)" \
+    '[(.result // .)[] | select(.title == $t or (.id | IN($ids[])))] | map(.id) | join(" ")')"
+if [ -n "$remaining_workflows" ]; then
+  fail "workflow(s) still present after cleanup: $remaining_workflows"
+fi
+echo "Verified absent: workflow \"$EXPECTED_WORKFLOW_TITLE\""
 
 if [ "${#ROUTING_DESCRIPTIONS[@]}" -gt 0 ]; then
   remaining="$(dtctl get settings --schema "builtin:openpipeline.bizevents.routing" -o json --plain 2>/dev/null \

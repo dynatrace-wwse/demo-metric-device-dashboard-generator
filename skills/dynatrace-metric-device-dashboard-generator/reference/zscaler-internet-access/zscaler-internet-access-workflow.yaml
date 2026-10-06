@@ -1,5 +1,5 @@
 id: 9c0b35d6-a22f-46d8-8574-ac8f5b03f03e
-title: 1.Metrics Dashboard Generator
+title: Zscaler Internet Access | Injector Workflow
 ownerType: USER
 isPrivate: false
 schemaVersion: 4
@@ -28,6 +28,8 @@ tasks:
     input:
       script: |
         export default async function () {
+          const EXPIRES_AT = "2026-08-27T00:00:00-07:00"; // null = no expiry
+          if (EXPIRES_AT && Date.now() >= Date.parse(EXPIRES_AT)) return { status: "expired", expiresAt: EXPIRES_AT };
           const EVENT_PROVIDER = "zscaler.zia.event.provider";
           const TOTAL_EVENTS = 3600;
           const BATCH_SIZE = 500;
@@ -114,6 +116,8 @@ tasks:
     input:
       script: |
         export default async function () {
+          const EXPIRES_AT = "2026-08-27T00:00:00-07:00"; // null = no expiry
+          if (EXPIRES_AT && Date.now() >= Date.parse(EXPIRES_AT)) return { status: "expired", expiresAt: EXPIRES_AT };
           const TOTAL_LOGS = 1800;
           const BATCH_SIZE = 300;
           const now = Date.now();
@@ -199,6 +203,8 @@ tasks:
     input:
       script: |
         export default async function () {
+          const EXPIRES_AT = "2026-08-27T00:00:00-07:00"; // null = no expiry
+          if (EXPIRES_AT && Date.now() >= Date.parse(EXPIRES_AT)) return { status: "expired", expiresAt: EXPIRES_AT };
           // Smartscape entities are created from BizEvents via OpenPipeline.
           return { status: "ok", message: "Entity extraction handled by OpenPipeline smartscapeNode processor." };
         }

@@ -23,3 +23,12 @@ Icon?
 # Node (in case any local tooling lands here)
 node_modules/
 npm-debug.log*
+
+# Secrets / credentials — never commit these
+.env
+.env.*
+*.pem
+*.key
+api_key*
+credentials*
+*_token
